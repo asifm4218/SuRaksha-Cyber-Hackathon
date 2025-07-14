@@ -13,6 +13,10 @@ export default function LandingPage() {
         router.push("/dashboard"); 
     }
 
+    const handleApplyNowClick = () => {
+        router.push("/signup");
+    }
+
   return (
     <div className="bg-background text-foreground min-h-screen flex flex-col">
       <header className="w-full">
@@ -74,7 +78,7 @@ export default function LandingPage() {
                     <Button variant="outline" className="bg-transparent border-white/50 text-white hover:bg-white/10" onClick={handleLoginClick}>
                         <User className="mr-2 h-4 w-4" /> Login
                     </Button>
-                    <Button className="bg-yellow-400 text-black hover:bg-yellow-500">
+                    <Button className="bg-yellow-400 text-black hover:bg-yellow-500" onClick={handleApplyNowClick}>
                         <UserPlus className="mr-2 h-4 w-4" /> Apply Now
                     </Button>
                 </div>
@@ -92,7 +96,7 @@ export default function LandingPage() {
                 Access your accounts, transfer money, pay bills, and manage investments - all from your smartphone or computer.
               </p>
               <div className="mt-8 flex gap-4">
-                <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-200 font-bold text-base">
+                <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-200 font-bold text-base" onClick={handleApplyNowClick}>
                   Explore Digital Banking <Milestone className="ml-2 h-5 w-5" />
                 </Button>
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 hover:text-white font-bold text-base">

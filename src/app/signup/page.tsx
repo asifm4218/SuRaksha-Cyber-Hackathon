@@ -43,15 +43,16 @@ export default function SignupPage() {
         const formData = new FormData(formRef.current);
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
+        const fullName = formData.get('fullName') as string;
 
         if (email && password) {
-            const result = await handleSignupAction({ email, password });
+            const result = await handleSignupAction({ email, password, fullName });
             if (result.success) {
                 toast({
                     title: "Account Created!",
                     description: "Your Canara Bank account has been successfully created. Please sign in to continue.",
                 })
-                router.push("/dashboard") // Direct to dashboard which is login page in this context.
+                router.push("/dashboard") // Direct to dashboard which handles login.
             } else {
                 toast({
                     title: "Sign Up Failed",
