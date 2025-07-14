@@ -1,0 +1,68 @@
+
+"use client"
+
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Logo } from "@/components/logo"
+import { useToast } from "@/hooks/use-toast"
+
+export default function ForgotPasswordPage() {
+    const router = useRouter()
+    const { toast } = useToast()
+
+    const handleSendResetLink = (e: React.FormEvent) => {
+        e.preventDefault()
+        // Simulate sending a reset link
+        toast({
+            title: "Reset Link Sent",
+            description: "If an account with that email exists, a password reset link has been sent.",
+        })
+        router.push("/")
+    }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md shadow-2xl">
+        <CardHeader className="items-center text-center">
+            <Logo className="mb-2" />
+            <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
+            <CardDescription>
+                No problem. Enter your email and we&apos;ll send you a reset link.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <form onSubmit={handleSendResetLink} className="grid gap-4">
+            <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                />
+            </div>
+            <Button type="submit" className="w-full font-semibold">
+                Send Reset Link
+            </Button>
+            </form>
+            <div className="mt-4 text-center text-sm">
+                <Link href="/" className="underline">
+                    Back to Sign In
+                </Link>
+            </div>
+        </CardContent>
+        </Card>
+    </div>
+  )
+}
