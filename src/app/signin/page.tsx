@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin } from "@/app/actions";
+import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin, verifyTwoFactorCode, sendTwoFactorCode } from "@/app/actions";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Building, Fingerprint, LoaderCircle } from "lucide-react";
+import { Building, Fingerprint, LoaderCircle, ShieldCheck } from "lucide-react";
 import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils";
 import {
     Dialog,
@@ -44,12 +44,19 @@ export default function SignInPage() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
 
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+  const [is2faLoading, setIs2faLoading] = useState(false);
+  
   const [isBiometricPromptOpen, setIsBiometricPromptOpen] = useState(false);
   const [biometricStep, setBiometricStep] = useState<'initial' | 'scanning' | 'success' | 'error'>('initial');
   const [biometricError, setBiometricError] = useState('');
+  
+  const [is2faDialogOpen, setIs2faDialogOpen] = useState(false);
+  const [userEmailFor2fa, setUserEmailFor2fa] = useState('');
+
 
   const handleStandardLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +70,22 @@ export default function SignInPage() {
     if (email && password) {
       const result = await handleLogin({ email, password });
       if (result.success && result.user) {
-        toast({
-          title: "Sign In Successful",
-          description: "Welcome back to Canara Bank!",
-        });
-        router.push(`/dashboard?email=${result.user.email}`);
+        // Instead of redirecting, trigger 2FA
+        setUserEmailFor2fa(result.user.email);
+        const codeSent = await sendTwoFactorCode(result.user.email);
+        if (codeSent.success) {
+            toast({
+                title: "Verification Code Sent",
+                description: "A 4-digit code has been sent to your email (check console).",
+            });
+            setIs2faDialogOpen(true);
+        } else {
+             toast({
+                title: "2FA Failed",
+                description: "Could not send verification code.",
+                variant: "destructive",
+            });
+        }
       } else {
         toast({
           title: "Sign In Failed",
@@ -78,6 +96,31 @@ export default function SignInPage() {
     }
     setIsLoginLoading(false);
   };
+
+  const handle2faVerification = async () => {
+    const code = codeRef.current?.value;
+    if (!code || !userEmailFor2fa) {
+        toast({ title: "Error", description: "Missing code or email.", variant: "destructive" });
+        return;
+    }
+
+    setIs2faLoading(true);
+    const result = await verifyTwoFactorCode(userEmailFor2fa, code);
+    if (result.success) {
+        toast({
+            title: "Sign In Successful",
+            description: "Welcome back to Canara Bank!",
+        });
+        router.push(`/dashboard?email=${userEmailFor2fa}`);
+    } else {
+        toast({
+            title: "Verification Failed",
+            description: result.message,
+            variant: "destructive"
+        });
+    }
+    setIs2faLoading(false);
+  }
 
   const handleBiometricSignIn = async () => {
     const email = emailRef.current?.value;
@@ -91,7 +134,6 @@ export default function SignInPage() {
     setBiometricStep('scanning');
 
     try {
-        // 1. Get challenge from server
         const challengeResponse = await getAuthenticationChallenge(email);
 
         if (!challengeResponse.success) {
@@ -112,10 +154,8 @@ export default function SignInPage() {
             timeout: challengeResponse.timeout
         };
 
-        // 2. Call WebAuthn API
         const credential = await navigator.credentials.get({ publicKey: options as any }) as any;
         
-        // Convert array buffers to base64url for server
         const verificationData = {
             id: credential.id,
             rawId: arrayBufferToBase64Url(credential.rawId),
@@ -126,10 +166,9 @@ export default function SignInPage() {
                 userHandle: credential.response.userHandle ? arrayBufferToBase64Url(credential.response.userHandle) : null,
             },
             type: credential.type,
-            challenge: challengeResponse.challenge, // Pass original challenge back
+            challenge: challengeResponse.challenge, 
         };
 
-        // 3. "Verify" on server
         const result = await verifyBiometricLogin(email, verificationData);
         if (result.success && result.user) {
             setBiometricStep('success');
@@ -282,6 +321,37 @@ export default function SignInPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+       <Dialog open={is2faDialogOpen} onOpenChange={setIs2faDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <div className="flex flex-col items-center text-center">
+                    <ShieldCheck className="h-16 w-16 text-primary mb-4" />
+                    <DialogTitle className="text-2xl">Two-Factor Authentication</DialogTitle>
+                </div>
+                <DialogDescription className="text-center py-4">
+                   We've sent a 4-digit verification code to your email address. Please enter it below to continue. (Check the console for the code).
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2">
+                <Label htmlFor="code-2fa" className="sr-only">Verification Code</Label>
+                <Input
+                    id="code-2fa"
+                    ref={codeRef}
+                    type="text"
+                    maxLength={4}
+                    placeholder="_ _ _ _"
+                    className="text-center text-2xl tracking-[1em]"
+                />
+            </div>
+            <DialogFooter>
+                <Button onClick={handle2faVerification} className="w-full" disabled={is2faLoading}>
+                     {is2faLoading && <LoaderCircle className="animate-spin mr-2" />}
+                    Verify Code
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }

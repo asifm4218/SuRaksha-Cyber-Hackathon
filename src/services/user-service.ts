@@ -15,6 +15,7 @@ export interface UserCredentials {
 
 const dbPath = path.join(process.cwd(), 'users.json');
 const credentialsDbPath = path.join(process.cwd(), 'credentials.json');
+const twoFactorDbPath = path.join(process.cwd(), '2fa_codes.json');
 
 // Pre-populate with a default user for demonstration purposes
 const defaultUsers: UserCredentials[] = [
@@ -62,6 +63,20 @@ async function writeStoredCredentials(credentials: StoredCredential[]): Promise<
     await writeData(credentialsDbPath, credentials);
 }
 
+// 2FA Code Management
+interface TwoFactorCode {
+    email: string;
+    code: string;
+    expires: number;
+}
+
+async function readTwoFactorCodes(): Promise<TwoFactorCode[]> {
+    return readData<TwoFactorCode>(twoFactorDbPath);
+}
+
+async function writeTwoFactorCodes(codes: TwoFactorCode[]): Promise<void> {
+    await writeData(twoFactorDbPath, codes);
+}
 
 /**
  * Finds a user by their email address.
@@ -126,4 +141,51 @@ export async function getUserCredential(email: string): Promise<any | null> {
     const credentials = await readStoredCredentials();
     const stored = credentials.find(c => c.userId === email);
     return stored ? stored.credential : null;
+}
+
+/**
+ * Stores a 2FA code for a user.
+ * @param email The user's email.
+ * @param code The 4-digit code. If null, the code is deleted.
+ */
+export async function storeTwoFactorCode(email: string, code: string | null): Promise<void> {
+    console.log(`Simulated DB: Storing 2FA code for ${email}`);
+    let codes = await readTwoFactorCodes();
+    
+    // Remove existing code for the user
+    codes = codes.filter(c => c.email.toLowerCase() !== email.toLowerCase());
+    
+    if (code) {
+        codes.push({
+            email: email,
+            code: code,
+            expires: Date.now() + 10 * 60 * 1000 // 10 minute expiry
+        });
+    }
+
+    await writeTwoFactorCodes(codes);
+}
+
+/**
+ * Retrieves a stored 2FA code for a user.
+ * @param email The user's email.
+ * @returns The stored code or null if not found or expired.
+ */
+export async function getTwoFactorCode(email: string): Promise<string | null> {
+    console.log(`Simulated DB: Getting 2FA code for ${email}`);
+    let codes = await readTwoFactorCodes();
+    
+    const stored = codes.find(c => c.email.toLowerCase() === email.toLowerCase());
+    
+    if (stored && stored.expires > Date.now()) {
+        return stored.code;
+    }
+    
+    // Clean up expired codes
+    if (stored) {
+        codes = codes.filter(c => c.email.toLowerCase() !== email.toLowerCase());
+        await writeTwoFactorCodes(codes);
+    }
+
+    return null;
 }

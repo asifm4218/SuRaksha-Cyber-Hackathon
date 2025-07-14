@@ -6,7 +6,7 @@ import type { SummarizeAnomalyScoresOutput } from "@/ai/flows/summarize-anomaly-
 import { verifyBiometrics } from "@/ai/flows/verify-biometrics-flow";
 import { sendEmailNotification } from "@/ai/flows/send-email-notification-flow";
 import type { SendEmailNotificationInput } from "@/ai/flows/send-email-notification-flow";
-import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential } from "@/services/user-service";
+import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential, storeTwoFactorCode, getTwoFactorCode } from "@/services/user-service";
 import { randomBytes } from 'crypto';
 
 // Helper to convert string to Base64URL
@@ -172,23 +172,55 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
     }
 }
 
+// === Standard Login & 2FA Actions ===
+
 export async function handleLogin(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
     const user = await findUserByEmail(credentials.email);
     if (!user) {
         return { success: false, message: "User not found. Please sign up." };
     }
 
-    // In a real app, you'd verify the password here.
-    // For the simulation, just finding the user is enough.
+    if (user.password !== credentials.password) {
+        return { success: false, message: "Invalid email or password." };
+    }
+    
+    // Don't send notification here, wait for 2FA
+    return { success: true, message: "Password verified. Please complete 2FA.", user };
+}
+
+export async function sendTwoFactorCode(email: string): Promise<{ success: boolean }> {
+    const code = Math.floor(1000 + Math.random() * 9000).toString(); // Generate 4-digit code
+    await storeTwoFactorCode(email, code);
 
     await sendNotificationEmail({
-        to: credentials.email,
+        to: email,
+        subject: "Your Canara Bank Verification Code",
+        body: `<h1>Verification Required</h1><p>Your two-factor authentication code is: <strong>${code}</strong></p><p>This code will expire in 10 minutes.</p>`
+    });
+    
+    return { success: true };
+}
+
+export async function verifyTwoFactorCode(email: string, code: string): Promise<{ success: boolean, message: string }> {
+    const storedCode = await getTwoFactorCode(email);
+    
+    if (!storedCode || storedCode !== code) {
+        return { success: false, message: "Invalid verification code. Please try again." };
+    }
+
+    // Code is correct, clear it so it can't be reused
+    await storeTwoFactorCode(email, null); 
+
+    await sendNotificationEmail({
+        to: email,
         subject: "Successful Sign-In",
         body: "<h1>Security Alert</h1><p>We detected a new sign-in to your Canara Bank account. If this was not you, please secure your account immediately.</p>"
     });
 
-    return { success: true, message: "Login successful!", user };
+    return { success: true, message: "Login successful!" };
 }
+
+// === Other Actions ===
 
 export async function handleSignup(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
     const existingUser = await findUserByEmail(credentials.email);
