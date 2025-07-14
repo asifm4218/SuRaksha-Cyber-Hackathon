@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="items-center text-center">
-            <Logo className="mb-2" />
+            <Logo className="mb-4" />
             <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
             <CardDescription>
                 No problem. Enter your email and we&apos;ll send you a reset link.

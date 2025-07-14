@@ -57,7 +57,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="items-center text-center">
-        <Logo className="mb-2" />
+        <Logo className="mb-4" />
         <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
           Enter your information to create a new Canara Bank account.

@@ -148,7 +148,6 @@ export default function DashboardLayout({
                     className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                     <Logo />
-                    <span className="sr-only">Canara Bank</span>
                 </Link>
                 {navItems.map((item) => (
                     <Link

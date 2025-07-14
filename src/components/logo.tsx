@@ -1,11 +1,16 @@
-import { ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-export function Logo({ className, iconOnly = false }: { className?: string, iconOnly?: boolean }) {
+export function Logo({ className }: { className?: string }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <ShieldCheck className="h-7 w-7 text-primary" />
-      {!iconOnly && <span className="text-xl font-bold tracking-tighter text-foreground">Canara Bank</span>}
+    <div className={cn("flex items-center", className)}>
+      <Image 
+        src="https://firebasestudio.ai/api/files/verisafe/uploads/images/canara-bank-logo-300x72.png" 
+        alt="Canara Bank Logo"
+        width={150}
+        height={36}
+        priority
+      />
     </div>
   );
 }

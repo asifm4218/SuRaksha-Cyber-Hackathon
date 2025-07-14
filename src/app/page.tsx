@@ -143,9 +143,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="items-center text-center">
-          <Logo className="mb-2" />
-          <CardTitle className="text-2xl font-bold tracking-tight">Welcome to Canara Bank</CardTitle>
-          <CardDescription>Securely sign in to your Canara Bank account</CardDescription>
+          <Logo className="mb-4" />
+          <CardTitle className="text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
+          <CardDescription>Securely sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
           <form ref={formRef} onSubmit={onLoginSubmit} className="grid gap-4">
