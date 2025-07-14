@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Fingerprint, LoaderCircle } from "lucide-react";
+import { Fingerprint, LoaderCircle, Check, ShieldQuestion } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,15 +27,22 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isBiometricOpen, setIsBiometricOpen] = useState(false);
   const [biometricState, setBiometricState] = useState<"idle" | "scanning" | "analyzing" | "success">("idle");
   const [progress, setProgress] = useState(0);
+  const [captchaState, setCaptchaState] = useState<"unchecked" | "checking" | "verified">("unchecked");
+
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (captchaState !== 'verified') {
+        // Optionally, show a message to complete the captcha
+        return;
+    }
     router.push("/dashboard");
   };
 
@@ -44,6 +51,15 @@ export default function LoginPage() {
     setBiometricState("scanning");
     setProgress(0);
   };
+
+  const handleCaptchaCheck = () => {
+    if (captchaState === 'unchecked') {
+      setCaptchaState('checking');
+      setTimeout(() => {
+        setCaptchaState('verified');
+      }, 1500);
+    }
+  }
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -105,7 +121,24 @@ export default function LoginPage() {
               </div>
               <Input id="password" type="password" required defaultValue="password123" />
             </div>
-            <Button type="submit" className="w-full font-semibold">
+
+            <div className="flex items-center space-x-2 rounded-md border border-input p-3 bg-secondary/50">
+                <div onClick={handleCaptchaCheck} className="cursor-pointer">
+                    <div className="h-6 w-6 rounded-sm border border-primary bg-background flex items-center justify-center">
+                        {captchaState === 'checking' && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                        {captchaState === 'verified' && <Check className="h-4 w-4 text-primary" />}
+                    </div>
+                </div>
+                <Label htmlFor="terms" className="flex-1">
+                  {captchaState === 'checking' ? 'Analyzing...' : "I am not a robot"}
+                </Label>
+                <div className="text-center">
+                    <ShieldQuestion className="h-6 w-6 text-muted-foreground"/>
+                    <p className="text-xs text-muted-foreground">VeriSafe AI</p>
+                </div>
+            </div>
+
+            <Button type="submit" className="w-full font-semibold" disabled={captchaState !== 'verified'}>
               Sign In
             </Button>
             <Button variant="outline" className="w-full" type="button" onClick={handleBiometricLogin}>
