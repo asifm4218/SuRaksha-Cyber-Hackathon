@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Fingerprint, LoaderCircle, Check, ShieldQuestion, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { verifyBiometricLogin } from "./actions";
+import { verifyBiometricLogin, handleLogin } from "./actions";
 
 type BiometricState = "idle" | "scanning" | "analyzing" | "success" | "error";
 
@@ -38,12 +38,14 @@ export default function LoginPage() {
   const [biometricMessage, setBiometricMessage] = useState("Use your fingerprint to sign in.");
   const [progress, setProgress] = useState(0);
   const [captchaState, setCaptchaState] = useState<"unchecked" | "checking" | "verified">("unchecked");
+  const emailRef = useRef<HTMLInputElement>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const onLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (captchaState !== 'verified') {
+    if (captchaState !== 'verified' || !emailRef.current?.value) {
         return;
     }
+    handleLogin(emailRef.current.value);
     router.push("/dashboard");
   };
 
@@ -123,11 +125,12 @@ export default function LoginPage() {
           <CardDescription>Securely sign in to your Canara Bank account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="grid gap-4">
+          <form onSubmit={onLoginSubmit} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                ref={emailRef}
                 type="email"
                 placeholder="m@example.com"
                 required

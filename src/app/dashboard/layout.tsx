@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
 import { useIdle } from "@/hooks/use-idle";
+import { handleSessionTimeout } from "@/app/actions";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
@@ -66,6 +67,7 @@ export default function DashboardLayout({
   const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
 
   const handleIdle = () => {
+    handleSessionTimeout();
     setIsIdleDialogOpen(true);
   };
 

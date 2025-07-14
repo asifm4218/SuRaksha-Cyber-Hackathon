@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useRef } from "react"
+import { handleSignup as handleSignupAction } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,9 +19,14 @@ import { Logo } from "@/components/logo"
 
 export default function SignupPage() {
     const router = useRouter()
+    const emailRef = useRef<HTMLInputElement>(null);
 
     const handleSignup = (e: React.FormEvent) => {
         e.preventDefault()
+        const email = emailRef.current?.value;
+        if (email) {
+            handleSignupAction(email);
+        }
         // For this prototype, we'll just redirect to the dashboard.
         router.push("/dashboard")
     }
@@ -43,6 +50,7 @@ export default function SignupPage() {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
+              ref={emailRef}
               type="email"
               placeholder="suresh@example.com"
               required

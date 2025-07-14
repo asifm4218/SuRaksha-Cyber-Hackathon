@@ -3,7 +3,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-
+import { useRef } from "react"
+import { handleForgotPassword } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -20,15 +21,19 @@ import { useToast } from "@/hooks/use-toast"
 export default function ForgotPasswordPage() {
     const router = useRouter()
     const { toast } = useToast()
+    const emailRef = useRef<HTMLInputElement>(null);
 
     const handleSendResetLink = (e: React.FormEvent) => {
         e.preventDefault()
-        // Simulate sending a reset link
-        toast({
-            title: "Reset Link Sent",
-            description: "If an account with that email exists, a password reset link has been sent.",
-        })
-        router.push("/")
+        const email = emailRef.current?.value;
+        if (email) {
+            handleForgotPassword(email);
+            toast({
+                title: "Reset Link Sent",
+                description: "If an account with that email exists, a password reset link has been sent.",
+            })
+            router.push("/")
+        }
     }
 
   return (
@@ -47,6 +52,7 @@ export default function ForgotPasswordPage() {
                 <Label htmlFor="email">Email</Label>
                 <Input
                 id="email"
+                ref={emailRef}
                 type="email"
                 placeholder="m@example.com"
                 required
