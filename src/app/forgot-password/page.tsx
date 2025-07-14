@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Building } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -41,7 +42,7 @@ export default function ForgotPasswordPage() {
                 title: "Reset Link Sent",
                 description: "If an account with that email exists, a password reset link has been sent.",
             })
-            router.push("/")
+            router.push("/signin")
         }
     }
 
@@ -72,8 +73,8 @@ export default function ForgotPasswordPage() {
             </Button>
             </form>
             <div className="mt-4 text-center text-sm">
-                <Link href="/" className="underline">
-                    Back to Home
+                <Link href="/signin" className="underline">
+                    Back to Sign In
                 </Link>
             </div>
         </CardContent>

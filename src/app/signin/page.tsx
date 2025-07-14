@@ -122,7 +122,7 @@ export default function SignInPage() {
               <Input id="password" name="password" type="password" required defaultValue="password123" />
             </div>
             <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading}>
-              {isLoginLoading && <LoaderCircle className="animate-spin" />}
+              {isLoginLoading && <LoaderCircle className="animate-spin mr-2" />}
               Sign in
             </Button>
           </form>
@@ -147,9 +147,9 @@ export default function SignInPage() {
             disabled={isBiometricLoading}
           >
             {isBiometricLoading ? (
-              <LoaderCircle className="animate-spin" />
+              <LoaderCircle className="animate-spin mr-2" />
             ) : (
-              <Fingerprint />
+              <Fingerprint className="mr-2 h-4 w-4" />
             )}
             Sign in with Biometrics
           </Button>
