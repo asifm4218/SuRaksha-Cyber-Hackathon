@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow for simulating biometric verification.
+ * @fileOverview This file defines a Genkit flow for simulating biometric verification using WebAuthn principles.
  *
  * - verifyBiometrics - A function that simulates verifying biometric data.
  * - VerifyBiometricsInput - The input type for the verifyBiometrics function.
@@ -11,7 +12,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const VerifyBiometricsInputSchema = z.object({
-  biometricData: z.string().describe('A dummy string representing the captured biometric data.'),
+  challenge: z.string().describe('A server-generated challenge string.'),
+  userHandle: z.string().describe('A unique identifier for the user.'),
+  clientDataJSON: z.string().describe('A JSON string containing client data.'),
+  authenticatorData: z.string().describe('Raw authenticator data.'),
+  signature: z.string().describe('The signature from the authenticator.'),
 });
 export type VerifyBiometricsInput = z.infer<typeof VerifyBiometricsInputSchema>;
 
@@ -27,13 +32,13 @@ export async function verifyBiometrics(input: VerifyBiometricsInput): Promise<Ve
 
 const prompt = ai.definePrompt({
   name: 'verifyBiometricsPrompt',
-  input: {schema: VerifyBiometricsInputSchema},
+  input: {schema: z.object({ success: z.boolean() }) },
   output: {schema: VerifyBiometricsOutputSchema},
-  prompt: `You are a security verification system. You have received biometric data.
+  prompt: `You are a security verification system. You have received the result of a biometric check.
   
-  For the purpose of this simulation, always assume the data is valid and return a success message.
+  Based on the success status, provide a user-facing message.
   
-  Input data: {{{biometricData}}}
+  Success Status: {{success}}
   `,
 });
 
@@ -44,18 +49,34 @@ const verifyBiometricsFlow = ai.defineFlow(
     outputSchema: VerifyBiometricsOutputSchema,
   },
   async (input) => {
-    // In a real application, this is where you would have complex logic to
-    // compare the incoming biometric data with data stored in a secure database.
-    // We will simulate a delay to make it feel more real.
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const {output} = await prompt(input);
+    // In a real WebAuthn implementation, you would:
+    // 1. Verify the challenge stored in the session matches the one in clientDataJSON.
+    // 2. Verify the origin in clientDataJSON.
+    // 3. Verify the signature using the user's stored public key.
+    // 4. Verify the authenticator data (flags, counter).
+    // For this simulation, we'll assume everything is valid.
     
-    // For this simulation, we will always return success.
-    // In a real app, you'd have logic to handle failure cases.
+    console.log('--- SIMULATING WEBAUTHN VERIFICATION ---');
+    console.log(`Received challenge for user: ${input.userHandle}`);
+    console.log('Simulating validation of signature and authenticator data...');
+
+    // Simulate a delay for the cryptographic verification
+    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 500));
+    
+    const isVerified = true; // In a real app, this comes from cryptographic checks.
+
+    if (!isVerified) {
+        return {
+            success: false,
+            message: 'Biometric signature could not be verified. Please try again.'
+        };
+    }
+
+    const {output} = await prompt({ success: isVerified });
+    
     return {
       success: true,
-      message: 'Biometric and behavioral patterns verified successfully.'
+      message: output?.message || 'Biometric and behavioral patterns verified successfully.'
     };
   }
 );

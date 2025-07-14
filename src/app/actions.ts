@@ -40,8 +40,18 @@ export async function verifyBiometricLogin(): Promise<{
         if (!user) {
             return { success: false, message: "Biometric profile not found." };
         }
+        
+        // This is where you would get the challenge from the browser's WebAuthn API
+        // For this simulation, we are sending dummy data.
+        const simulatedWebAuthnData = {
+          challenge: "server-generated-random-string",
+          userHandle: user.email,
+          clientDataJSON: "e.g., base64-encoded-client-data",
+          authenticatorData: "e.g., base64-encoded-auth-data",
+          signature: "e.g., base64-encoded-signature",
+        }
 
-        const result = await verifyBiometrics({ biometricData: "simulated-fingerprint-data" });
+        const result = await verifyBiometrics(simulatedWebAuthnData);
         if (result.success) {
             await sendNotificationEmail({
                 to: user.email,
