@@ -3,8 +3,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Fingerprint, LoaderCircle, Check, ShieldQuestion } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Fingerprint, LoaderCircle, Check, ShieldQuestion, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,29 +27,24 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
+import { verifyBiometricLogin } from "./actions";
+
+type BiometricState = "idle" | "scanning" | "analyzing" | "success" | "error";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isBiometricOpen, setIsBiometricOpen] = useState(false);
-  const [biometricState, setBiometricState] = useState<"idle" | "scanning" | "analyzing" | "success">("idle");
+  const [biometricState, setBiometricState] = useState<BiometricState>("idle");
+  const [biometricMessage, setBiometricMessage] = useState("Use your fingerprint to sign in.");
   const [progress, setProgress] = useState(0);
   const [captchaState, setCaptchaState] = useState<"unchecked" | "checking" | "verified">("unchecked");
-
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (captchaState !== 'verified') {
-        // Optionally, show a message to complete the captcha
         return;
     }
     router.push("/dashboard");
-  };
-
-  const handleBiometricLogin = () => {
-    setIsBiometricOpen(true);
-    setBiometricState("scanning");
-    setProgress(0);
   };
 
   const handleCaptchaCheck = () => {
@@ -61,31 +56,61 @@ export default function LoginPage() {
     }
   }
 
+  const resetBiometricDialog = useCallback(() => {
+    setBiometricState('idle');
+    setProgress(0);
+    setBiometricMessage("Use your fingerprint to sign in.");
+  }, []);
+
+  const handleBiometricLogin = () => {
+    setIsBiometricOpen(true);
+    setBiometricState("scanning");
+    setBiometricMessage("Place your finger on the sensor.");
+    setProgress(0);
+  };
+  
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (biometricState === "scanning") {
-      timer = setTimeout(() => {
-        setBiometricState("analyzing");
-      }, 2000);
-    } else if (biometricState === "analyzing") {
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => setBiometricState("success"), 500);
-            return 100;
-          }
-          return prev + 20;
-        });
-      }, 400);
-      return () => clearInterval(interval);
-    } else if (biometricState === "success") {
+    if (isBiometricOpen && biometricState === "scanning") {
         timer = setTimeout(() => {
-            setIsBiometricOpen(false);
-            router.push("/dashboard");
+            setBiometricState("analyzing");
+            setBiometricMessage("Analyzing biometric and behavioral data...");
         }, 1500);
     }
     return () => clearTimeout(timer);
+  }, [isBiometricOpen, biometricState]);
+
+
+  useEffect(() => {
+    if (biometricState !== "analyzing") return;
+    
+    let progressInterval: NodeJS.Timeout;
+
+    const callVerification = async () => {
+        const result = await verifyBiometricLogin();
+        clearInterval(progressInterval);
+        setProgress(100);
+
+        if (result.success) {
+            setBiometricState("success");
+            setBiometricMessage(result.message);
+            setTimeout(() => {
+                setIsBiometricOpen(false);
+                router.push("/dashboard");
+            }, 2000);
+        } else {
+            setBiometricState("error");
+            setBiometricMessage(result.message);
+        }
+    };
+
+    progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 10, 90));
+    }, 200);
+    
+    callVerification();
+
+    return () => clearInterval(progressInterval);
   }, [biometricState, router]);
 
 
@@ -156,8 +181,7 @@ export default function LoginPage() {
 
       <Dialog open={isBiometricOpen} onOpenChange={(isOpen) => {
           if (!isOpen) {
-            setBiometricState('idle');
-            setProgress(0);
+            resetBiometricDialog();
           }
           setIsBiometricOpen(isOpen);
       }}>
@@ -165,27 +189,27 @@ export default function LoginPage() {
             <DialogHeader>
                 <DialogTitle>Biometric Authentication</DialogTitle>
                 <DialogDescription>
-                    {biometricState === 'idle' && 'Use your fingerprint to sign in.'}
-                    {biometricState === 'scanning' && 'Place your finger on the sensor.'}
-                    {biometricState === 'analyzing' && 'Analyzing biometric and behavioral data...'}
-                    {biometricState === 'success' && 'Authentication successful! Redirecting...'}
+                    {biometricMessage}
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center justify-center gap-6 py-8">
-                <Fingerprint 
-                    className={cn(
-                        "h-24 w-24 text-muted-foreground transition-colors duration-500",
-                        biometricState === 'scanning' && 'animate-pulse text-primary',
-                        biometricState === 'analyzing' && 'text-primary',
-                        biometricState === 'success' && 'text-green-500'
-                    )}
-                />
+                {biometricState !== 'success' && (
+                    <Fingerprint 
+                        className={cn(
+                            "h-24 w-24 text-muted-foreground transition-colors duration-500",
+                            biometricState === 'scanning' && 'animate-pulse text-primary',
+                            (biometricState === 'analyzing' || biometricState === 'success') && 'text-primary',
+                            biometricState === 'error' && 'text-destructive'
+                        )}
+                    />
+                )}
+                {biometricState === 'success' && (
+                    <ShieldCheck className="h-24 w-24 text-green-500" />
+                )}
+
                 {(biometricState === 'analyzing' || biometricState === 'success') && (
                     <div className="w-full max-w-xs space-y-2">
                          <Progress value={progress} className="h-2" />
-                         <p className="text-xs text-muted-foreground text-center">
-                            Verifying behavioral patterns...
-                         </p>
                     </div>
                 )}
                  {biometricState === 'scanning' && (
