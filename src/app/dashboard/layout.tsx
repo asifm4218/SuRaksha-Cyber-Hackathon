@@ -17,7 +17,7 @@ import {
   Wallet,
   Building
 } from "lucide-react";
-
+import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/sheet";
 import { useIdle } from "@/hooks/use-idle";
 import { handleSessionTimeout } from "@/app/actions";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -75,6 +77,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleIdle = () => {
     handleSessionTimeout();
@@ -196,7 +199,10 @@ export default function DashboardLayout({
               </div>
             </SheetContent>
           </Sheet>
-          <div className="w-full flex-1">
+          <div className="w-full flex-1 md:hidden">
+            <Logo />
+          </div>
+          <div className="w-full flex-1 hidden md:block">
             {/* Can add search bar here */}
           </div>
           <Button variant="outline" size="icon" className="h-8 w-8">
@@ -223,9 +229,10 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-[#0f2851]">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-[#0f2851] pb-24 md:pb-6">
           {children}
         </main>
+        {isMobile && <MobileNav navItems={navItems} />}
       </div>
     </div>
 
