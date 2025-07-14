@@ -12,5 +12,10 @@
     "email": "joe@gmail.com",
     "password": "imbatman",
     "fullName": "Joegoldberg"
+  },
+  {
+    "email": "alice123@gmail.com",
+    "password": "123",
+    "fullName": "Alice"
   }
 ]

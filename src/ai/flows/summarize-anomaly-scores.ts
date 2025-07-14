@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for summarizing daily anomaly scores.
@@ -26,10 +27,12 @@ const prompt = ai.definePrompt({
   name: 'summarizeAnomalyScoresPrompt',
   input: {schema: SummarizeAnomalyScoresInputSchema},
   output: {schema: SummarizeAnomalyScoresOutputSchema},
-  prompt: `You are a security analyst. Your task is to summarize the anomaly scores for the day and identify users with suspicious behavior patterns.
+  prompt: `You are an AI security analyst for a bank. Your task is to summarize potential security anomalies based on simulated user data.
 
-  Provide a concise summary of the anomaly scores, highlighting any users that exhibit unusual activity.
-  `, // Removed Handlebars templating as there's no dynamic data in the prompt yet.
+  Today's analysis shows a login from a new device for user analyst@canara.co. While the login was successful, the subsequent navigation speed and click patterns are slightly faster than the user's established baseline. 
+  
+  Provide a concise, one-sentence summary for the user, mentioning the detection of unusual patterns but without causing undue alarm. Frame it as a successful security check.
+  `,
 });
 
 const summarizeAnomalyScoresFlow = ai.defineFlow(

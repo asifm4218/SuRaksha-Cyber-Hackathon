@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getAnomalySummary } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,11 @@ export function SecurityOverview() {
     }
     setIsLoading(false);
   };
+  
+  useEffect(() => {
+    handleAnalyze();
+  }, [])
+
 
   const handle2faVerification = () => {
     // Simulate verification
@@ -65,7 +71,7 @@ export function SecurityOverview() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        {isLoading && (
+        {isLoading && !summary && (
             <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-full" />
@@ -80,7 +86,7 @@ export function SecurityOverview() {
         )}
         <Button onClick={handleAnalyze} disabled={isLoading} className="w-full">
             <Sparkles className="mr-2 h-4 w-4" />
-            {isLoading ? "Analyzing..." : "Run Security Analysis"}
+            {isLoading ? "Analyzing..." : "Re-run Security Analysis"}
         </Button>
       </CardContent>
       <CardFooter>
