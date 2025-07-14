@@ -1,20 +1,39 @@
 
 'use server';
 
-// THIS IS A SIMULATED IN-MEMORY DATABASE
-// In a real application, you would use a real database like Firestore,
-// PostgreSQL, etc. and a secure authentication service.
+import fs from 'fs/promises';
+import path from 'path';
+
+// THIS IS A SIMULATED DATABASE USING A JSON FILE
+// In a real application, you would use a real database like Firestore.
 
 export interface UserCredentials {
   email: string;
-  password?: string; // Password is included for the simulation
+  password?: string;
   fullName?: string;
 }
 
+const dbPath = path.join(process.cwd(), 'users.json');
+
 // Pre-populate with a default user for demonstration purposes
-const users: UserCredentials[] = [
+const defaultUsers: UserCredentials[] = [
   { email: 'analyst@canara.co', password: 'password123', fullName: 'Security Analyst' },
 ];
+
+async function readUsers(): Promise<UserCredentials[]> {
+  try {
+    const data = await fs.readFile(dbPath, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    // If the file doesn't exist, initialize it with default users
+    await fs.writeFile(dbPath, JSON.stringify(defaultUsers, null, 2));
+    return defaultUsers;
+  }
+}
+
+async function writeUsers(users: UserCredentials[]): Promise<void> {
+  await fs.writeFile(dbPath, JSON.stringify(users, null, 2));
+}
 
 /**
  * Finds a user by their email address.
@@ -23,8 +42,7 @@ const users: UserCredentials[] = [
  */
 export async function findUserByEmail(email: string): Promise<UserCredentials | null> {
   console.log('Simulated DB: Searching for user with email:', email);
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 300));
+  const users = await readUsers();
   const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
   return user || null;
 }
@@ -36,8 +54,7 @@ export async function findUserByEmail(email: string): Promise<UserCredentials | 
  */
 export async function createUser(credentials: UserCredentials): Promise<UserCredentials> {
   console.log('Simulated DB: Creating new user with email:', credentials.email);
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+  const users = await readUsers();
   
   const newUser: UserCredentials = {
     email: credentials.email,
@@ -46,6 +63,7 @@ export async function createUser(credentials: UserCredentials): Promise<UserCred
   };
 
   users.push(newUser);
+  await writeUsers(users);
   console.log('Simulated DB: Current users:', users.map(u => u.email));
   return newUser;
 }
