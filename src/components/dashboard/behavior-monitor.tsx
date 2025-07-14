@@ -22,7 +22,7 @@ export function BehaviorMonitor() {
       <CardContent>
         <div className="text-sm text-muted-foreground space-y-2">
           <p>
-            To enhance your security, Canara Bank continuously analyzes how you
+            To enhance your security, VeriSafe continuously analyzes how you
             interact with the app. Metrics like{" "}
             <span className="font-semibold text-foreground">typing speed</span>,{" "}
             <span className="font-semibold text-foreground">

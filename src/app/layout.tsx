@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Canara Bank',
+  title: 'VeriSafe',
   description: 'Enhanced mobile banking security using Behavior-Based Continuous Authentication.',
 };
 
