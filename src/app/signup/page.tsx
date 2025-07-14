@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -16,19 +17,24 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SignupPage() {
     const router = useRouter()
+    const { toast } = useToast()
     const emailRef = useRef<HTMLInputElement>(null);
 
-    const handleSignup = (e: React.FormEvent) => {
+    const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
         const email = emailRef.current?.value;
         if (email) {
-            handleSignupAction(email);
+            await handleSignupAction(email);
+            toast({
+                title: "Account Created!",
+                description: "Your VeriSafe account has been successfully created. Please sign in to continue.",
+            })
+            router.push("/")
         }
-        // For this prototype, we'll just redirect to the dashboard.
-        router.push("/dashboard")
     }
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
