@@ -1,0 +1,11 @@
+[
+  {
+    "email": "analyst@canara.co",
+    "password": "password123",
+    "fullName": "Security Analyst"
+  },
+  {
+    "email": "alice234@gmail.com",
+    "password": "345"
+  }
+]

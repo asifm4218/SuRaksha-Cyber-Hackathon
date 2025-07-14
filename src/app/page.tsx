@@ -144,7 +144,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="items-center text-center">
           <Logo className="mb-2" />
-          <CardTitle className="text-2xl font-bold tracking-tight">Welcome to VeriSafe</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">Welcome to Canara Bank</CardTitle>
           <CardDescription>Securely sign in to your Canara Bank account</CardDescription>
         </CardHeader>
         <CardContent>
@@ -185,7 +185,7 @@ export default function LoginPage() {
                 </Label>
                 <div className="text-center">
                     <ShieldQuestion className="h-6 w-6 text-muted-foreground"/>
-                    <p className="text-xs text-muted-foreground">VeriSafe AI</p>
+                    <p className="text-xs text-muted-foreground">Canara Bank AI</p>
                 </div>
             </div>
 
