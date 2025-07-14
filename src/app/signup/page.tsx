@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Building, Fingerprint, LoaderCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 
 function Logo({ className }: { className?: string }) {
@@ -59,10 +59,10 @@ export default function SignupPage() {
                         // Remap challenge and user.id from Base64URL to ArrayBuffer
                         const publicKeyCredentialCreationOptions = {
                            ...challengeResponse,
-                           challenge: Buffer.from(challengeResponse.challenge, 'base64url'),
+                           challenge: base64UrlToUint8Array(challengeResponse.challenge),
                            user: {
                                ...challengeResponse.user,
-                               id: Buffer.from(challengeResponse.user.id, 'utf8')
+                               id: base64UrlToUint8Array(challengeResponse.user.id)
                            }
                         };
                         
@@ -71,10 +71,10 @@ export default function SignupPage() {
                         // Convert ArrayBuffers to Base64URL for server
                         const credentialForServer = {
                           id: credential.id,
-                          rawId: Buffer.from(credential.rawId).toString('base64url'),
+                          rawId: arrayBufferToBase64Url(credential.rawId),
                           response: {
-                            clientDataJSON: Buffer.from(credential.response.clientDataJSON).toString('base64url'),
-                            attestationObject: Buffer.from(credential.response.attestationObject).toString('base64url'),
+                            clientDataJSON: arrayBufferToBase64Url(credential.response.clientDataJSON),
+                            attestationObject: arrayBufferToBase64Url(credential.response.attestationObject),
                           },
                           type: credential.type,
                         };

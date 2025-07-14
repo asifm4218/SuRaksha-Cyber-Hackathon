@@ -9,6 +9,14 @@ import type { SendEmailNotificationInput } from "@/ai/flows/send-email-notificat
 import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential } from "@/services/user-service";
 import { randomBytes } from 'crypto';
 
+// Helper to convert string to Base64URL
+function toBase64Url(str: string | Buffer) {
+    return Buffer.from(str).toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+}
+
 export async function getAnomalySummary(): Promise<{
   success: boolean;
   summary?: string;
@@ -46,13 +54,13 @@ export async function getRegistrationChallenge(email: string, fullName: string) 
     // We are skipping that for this simulation.
 
     return {
-        challenge: randomBytes(32).toString('base64url'),
+        challenge: toBase64Url(randomBytes(32)),
         rp: {
             name: "Canara Bank",
             id: process.env.NODE_ENV === 'production' ? new URL(process.env.NEXT_PUBLIC_URL!).hostname : 'localhost',
         },
         user: {
-            id: user.email, // Use a stable user ID. Email is fine for this demo.
+            id: toBase64Url(user.email), // User ID must be Base64URL
             name: user.email,
             displayName: user.fullName || "User",
         },
@@ -101,11 +109,11 @@ export async function getAuthenticationChallenge(email: string) {
 
     return {
         success: true,
-        challenge: randomBytes(32).toString('base64url'),
+        challenge: toBase64Url(randomBytes(32)),
         rpId: process.env.NODE_ENV === 'production' ? new URL(process.env.NEXT_PUBLIC_URL!).hostname : 'localhost',
         allowCredentials: [{
             type: 'public-key',
-            id: userCredential.id,
+            id: userCredential.rawId, // Use rawId for allowCredentials
             transports: ['internal'], // For platform authenticators
         }],
         userVerification: 'required',

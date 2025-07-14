@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Building, Fingerprint, LoaderCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -102,11 +102,11 @@ export default function SignInPage() {
         }
 
         const options = {
-            challenge: Buffer.from(challengeResponse.challenge!, 'base64url'),
+            challenge: base64UrlToUint8Array(challengeResponse.challenge!),
             rpId: challengeResponse.rpId,
             allowCredentials: challengeResponse.allowCredentials?.map(cred => ({
                 ...cred,
-                id: Buffer.from(cred.id, 'base64url'),
+                id: base64UrlToUint8Array(cred.id),
             })),
             userVerification: challengeResponse.userVerification,
             timeout: challengeResponse.timeout
@@ -118,12 +118,12 @@ export default function SignInPage() {
         // Convert array buffers to base64url for server
         const verificationData = {
             id: credential.id,
-            rawId: Buffer.from(credential.rawId).toString('base64url'),
+            rawId: arrayBufferToBase64Url(credential.rawId),
             response: {
-                clientDataJSON: Buffer.from(credential.response.clientDataJSON).toString('base64url'),
-                authenticatorData: Buffer.from(credential.response.authenticatorData).toString('base64url'),
-                signature: Buffer.from(credential.response.signature).toString('base64url'),
-                userHandle: credential.response.userHandle ? Buffer.from(credential.response.userHandle).toString('base64url') : null,
+                clientDataJSON: arrayBufferToBase64Url(credential.response.clientDataJSON),
+                authenticatorData: arrayBufferToBase64Url(credential.response.authenticatorData),
+                signature: arrayBufferToBase64Url(credential.response.signature),
+                userHandle: credential.response.userHandle ? arrayBufferToBase64Url(credential.response.userHandle) : null,
             },
             type: credential.type,
             challenge: challengeResponse.challenge, // Pass original challenge back
