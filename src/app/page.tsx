@@ -10,7 +10,7 @@ export default function LandingPage() {
     const router = useRouter();
 
     const handleLoginClick = () => {
-        router.push("/dashboard"); 
+        router.push("/signin"); 
     }
 
     const handleApplyNowClick = () => {

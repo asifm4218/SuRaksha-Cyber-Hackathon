@@ -52,7 +52,7 @@ export default function SignupPage() {
                     title: "Account Created!",
                     description: "Your Canara Bank account has been successfully created. Please sign in to continue.",
                 })
-                router.push("/dashboard") // Direct to dashboard which handles login.
+                router.push("/signin")
             } else {
                 toast({
                     title: "Sign Up Failed",
@@ -100,7 +100,7 @@ export default function SignupPage() {
         </form>
         <div className="mt-4 text-center text-sm">
           Already have an account?{" "}
-          <Link href="/dashboard" className="underline">
+          <Link href="/signin" className="underline">
             Sign in
           </Link>
         </div>
