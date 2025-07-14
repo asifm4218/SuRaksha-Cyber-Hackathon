@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   ArrowRightLeft,
   Bell,
@@ -11,6 +12,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  ShieldAlert,
   UserCircle,
   Wallet,
 } from "lucide-react";
@@ -18,6 +20,14 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +42,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
+import { useIdle } from "@/hooks/use-idle";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
@@ -52,8 +63,21 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
+
+  const handleIdle = () => {
+    setIsIdleDialogOpen(true);
+  };
+
+  useIdle({ onIdle: handleIdle, idleTime: 60 });
+
+  const handleLogout = () => {
+    setIsIdleDialogOpen(false);
+    router.push('/');
+  }
 
   return (
+    <>
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-card md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
@@ -193,5 +217,25 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+
+    <Dialog open={isIdleDialogOpen} onOpenChange={setIsIdleDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <div className="flex flex-col items-center text-center">
+                    <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
+                    <DialogTitle className="text-2xl">Session Timeout</DialogTitle>
+                </div>
+                <DialogDescription className="text-center py-4">
+                    For your security, your session has been ended due to inactivity. Our AI model detected a period of no interaction, which could indicate a security risk.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+                <Button onClick={handleLogout} className="w-full">
+                    Return to Sign In
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
