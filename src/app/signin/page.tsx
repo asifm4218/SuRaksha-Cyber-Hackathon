@@ -49,12 +49,12 @@ export default function SignInPage() {
 
     if (email && password) {
       const result = await handleLogin({ email, password });
-      if (result.success) {
+      if (result.success && result.user) {
         toast({
           title: "Sign In Successful",
           description: "Welcome back to Canara Bank!",
         });
-        router.push("/dashboard");
+        router.push(`/dashboard?email=${result.user.email}`);
       } else {
         toast({
           title: "Sign In Failed",
@@ -69,12 +69,12 @@ export default function SignInPage() {
   const handleBiometric = async () => {
     setIsBiometricLoading(true);
     const result = await verifyBiometricLogin();
-    if (result.success) {
+    if (result.success && result.user) {
       toast({
         title: "Biometric Scan Successful",
         description: "Welcome back! Your identity has been verified.",
       });
-      router.push("/dashboard");
+      router.push(`/dashboard?email=${result.user.email}`);
     } else {
       toast({
         title: "Biometric Scan Failed",
@@ -106,6 +106,7 @@ export default function SignInPage() {
                 type="email"
                 placeholder="suresh@example.com"
                 required
+                defaultValue="analyst@canara.co"
               />
             </div>
             <div className="grid gap-2">
@@ -118,7 +119,7 @@ export default function SignInPage() {
                   Forgot your password?
                 </Link>
               </div>
-              <Input id="password" name="password" type="password" required />
+              <Input id="password" name="password" type="password" required defaultValue="password123" />
             </div>
             <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading}>
               {isLoginLoading && <LoaderCircle className="animate-spin" />}

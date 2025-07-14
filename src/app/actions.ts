@@ -32,17 +32,24 @@ export async function getAnomalySummary(): Promise<{
 export async function verifyBiometricLogin(): Promise<{
   success: boolean;
   message: string;
+  user?: UserCredentials;
 }> {
     try {
+        // In a real app, you'd find the user associated with the biometrics
+        const user = await findUserByEmail("analyst@canara.co");
+        if (!user) {
+            return { success: false, message: "Biometric profile not found." };
+        }
+
         const result = await verifyBiometrics({ biometricData: "simulated-fingerprint-data" });
         if (result.success) {
             await sendNotificationEmail({
-                to: "analyst@canara.co",
+                to: user.email,
                 subject: "Successful Biometric Sign-In",
                 body: "<h1>Security Alert</h1><p>Your account was just accessed using biometrics. If this was not you, please secure your account immediately.</p>"
             });
         }
-        return result;
+        return { ...result, user };
     } catch (error) {
         console.error("Error verifying biometrics:", error);
         return {
@@ -52,7 +59,7 @@ export async function verifyBiometricLogin(): Promise<{
     }
 }
 
-export async function handleLogin(credentials: UserCredentials): Promise<{ success: boolean, message: string }> {
+export async function handleLogin(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
     const user = await findUserByEmail(credentials.email);
     if (!user) {
         return { success: false, message: "User not found. Please sign up." };
@@ -67,7 +74,7 @@ export async function handleLogin(credentials: UserCredentials): Promise<{ succe
         body: "<h1>Security Alert</h1><p>We detected a new sign-in to your Canara Bank account. If this was not you, please secure your account immediately.</p>"
     });
 
-    return { success: true, message: "Login successful!" };
+    return { success: true, message: "Login successful!", user };
 }
 
 export async function handleSignup(credentials: UserCredentials): Promise<{ success: boolean, message: string }> {
@@ -101,6 +108,11 @@ export async function handleSessionTimeout() {
         subject: "Security Alert: Session Timeout",
         body: "<h1>Security Alert</h1><p>Your session on Canara Bank has been automatically terminated due to inactivity. This is a security measure to protect your account.</p>"
     });
+}
+
+export async function getUserDetails(email: string): Promise<UserCredentials | null> {
+    if (!email) return null;
+    return findUserByEmail(email);
 }
 
 

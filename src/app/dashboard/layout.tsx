@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
   ArrowRightLeft,
@@ -56,19 +56,6 @@ function Logo({ className }: { className?: string }) {
   );
 }
 
-
-const navItems = [
-  { href: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
-  { href: "/dashboard/accounts", icon: Wallet, label: "Accounts" },
-  { href: "/dashboard/transactions", icon: ArrowRightLeft, label: "Transactions" },
-  { href: "/dashboard/cards", icon: CreditCard, label: "My Cards" },
-];
-
-const secondaryNavItems = [
-  { href: "/dashboard/profile", icon: UserCircle, label: "Profile" },
-  { href: "/dashboard/settings", icon: Settings, label: "Settings" },
-];
-
 export default function DashboardLayout({
   children,
 }: {
@@ -76,8 +63,22 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email');
   const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  const navItems = [
+    { href: `/dashboard?email=${email}`, icon: LayoutGrid, label: "Dashboard" },
+    { href: `/dashboard/accounts?email=${email}`, icon: Wallet, label: "Accounts" },
+    { href: `/dashboard/transactions?email=${email}`, icon: ArrowRightLeft, label: "Transactions" },
+    { href: `/dashboard/cards?email=${email}`, icon: CreditCard, label: "My Cards" },
+  ];
+  
+  const secondaryNavItems = [
+    { href: `/dashboard/profile?email=${email}`, icon: UserCircle, label: "Profile" },
+    { href: `/dashboard/settings?email=${email}`, icon: Settings, label: "Settings" },
+  ];
 
   const handleIdle = () => {
     handleSessionTimeout();
@@ -97,7 +98,7 @@ export default function DashboardLayout({
       <div className="hidden border-r bg-card md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/">
+            <Link href={`/?email=${email}`}>
               <Logo />
             </Link>
           </div>
@@ -109,7 +110,7 @@ export default function DashboardLayout({
                   href={item.href}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                    pathname === item.href && "bg-muted text-primary"
+                    pathname === item.href.split('?')[0] && "bg-muted text-primary"
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -126,7 +127,7 @@ export default function DashboardLayout({
                       href={item.href}
                       className={cn(
                         "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                        pathname === item.href && "bg-muted text-primary"
+                        pathname === item.href.split('?')[0] && "bg-muted text-primary"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
@@ -157,7 +158,7 @@ export default function DashboardLayout({
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
-                    href="/dashboard"
+                    href={`/dashboard?email=${email}`}
                     className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                     <Logo />
@@ -168,7 +169,7 @@ export default function DashboardLayout({
                         href={item.href}
                         className={cn(
                             "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground",
-                            pathname === item.href && "bg-muted text-foreground"
+                            pathname === item.href.split('?')[0] && "bg-muted text-foreground"
                         )}
                     >
                         <item.icon className="h-5 w-5" />
@@ -184,7 +185,7 @@ export default function DashboardLayout({
                         href={item.href}
                         className={cn(
                             "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground",
-                            pathname === item.href && "bg-muted text-foreground"
+                            pathname === item.href.split('?')[0] && "bg-muted text-foreground"
                         )}
                       >
                         <item.icon className="h-5 w-5" />
@@ -222,7 +223,7 @@ export default function DashboardLayout({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/dashboard/settings?email=${email}`)}>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/')}>Logout</DropdownMenuItem>
