@@ -6,7 +6,8 @@ import type { SummarizeAnomalyScoresOutput } from "@/ai/flows/summarize-anomaly-
 import { verifyBiometrics } from "@/ai/flows/verify-biometrics-flow";
 import { sendEmailNotification } from "@/ai/flows/send-email-notification-flow";
 import type { SendEmailNotificationInput } from "@/ai/flows/send-email-notification-flow";
-import { createUser, findUserByEmail, type UserCredentials } from "@/services/user-service";
+import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential } from "@/services/user-service";
+import { randomBytes } from 'crypto';
 
 export async function getAnomalySummary(): Promise<{
   success: boolean;
@@ -29,37 +30,131 @@ export async function getAnomalySummary(): Promise<{
   }
 }
 
-export async function verifyBiometricLogin(): Promise<{
+// === WebAuthn Actions ===
+
+/**
+ * Generates a registration challenge for WebAuthn.
+ * In a real app, this challenge would be stored in the session.
+ */
+export async function getRegistrationChallenge(email: string, fullName: string) {
+    const user = await findUserByEmail(email);
+    if (!user) {
+        throw new Error("User not found for registration challenge");
+    }
+    
+    // In a real app, you would look up existing credentials to prevent re-registration on the same device.
+    // We are skipping that for this simulation.
+
+    return {
+        challenge: randomBytes(32).toString('base64url'),
+        rp: {
+            name: "Canara Bank",
+            id: process.env.NODE_ENV === 'production' ? new URL(process.env.NEXT_PUBLIC_URL!).hostname : 'localhost',
+        },
+        user: {
+            id: user.email, // Use a stable user ID. Email is fine for this demo.
+            name: user.email,
+            displayName: user.fullName || "User",
+        },
+        pubKeyCredParams: [
+            { type: "public-key", alg: -7 }, // ES256
+            { type: "public-key", alg: -257 } // RS256
+        ],
+        authenticatorSelection: {
+            authenticatorAttachment: "platform", // "platform" for built-in sensors like Touch ID
+            requireResidentKey: true,
+            userVerification: "required",
+        },
+        timeout: 60000,
+        attestation: "direct" // or "none", "indirect"
+    }
+}
+
+/**
+ * "Verifies" the registration response from the client.
+ * In a real app, this would involve intense cryptographic validation.
+ */
+export async function verifyRegistration(email: string, cred: any) {
+    console.log("Simulating verification of registration credential for user:", email);
+    console.log("Received credential:", cred);
+    
+    // In a real app:
+    // 1. Verify the challenge.
+    // 2. Verify the origin.
+    // 3. Verify the attestation signature.
+    // 4. Extract and store the public key and credential ID.
+
+    // For simulation, we'll just store the "credential"
+    await storeUserCredential(email, cred);
+
+    return { success: true, message: "Biometric registration successful (simulated verification)." };
+}
+
+/**
+ * Generates an authentication challenge for WebAuthn.
+ */
+export async function getAuthenticationChallenge(email: string) {
+    const userCredential = await getUserCredential(email);
+    if (!userCredential) {
+        return { success: false, message: 'No biometric credential found for this user.' };
+    }
+
+    return {
+        success: true,
+        challenge: randomBytes(32).toString('base64url'),
+        rpId: process.env.NODE_ENV === 'production' ? new URL(process.env.NEXT_PUBLIC_URL!).hostname : 'localhost',
+        allowCredentials: [{
+            type: 'public-key',
+            id: userCredential.id,
+            transports: ['internal'], // For platform authenticators
+        }],
+        userVerification: 'required',
+        timeout: 60000,
+    };
+}
+
+
+/**
+ * Simulates verifying the biometric login data.
+ * @param verificationData - The data from the client's WebAuthn API call.
+ */
+export async function verifyBiometricLogin(email: string, verificationData: any): Promise<{
   success: boolean;
   message: string;
   user?: UserCredentials;
 }> {
     try {
-        // In a real app, you'd find the user associated with the biometrics
-        const user = await findUserByEmail("analyst@canara.co");
+        const user = await findUserByEmail(email);
         if (!user) {
             return { success: false, message: "Biometric profile not found." };
         }
         
+        console.log("Simulating verification of authentication data for user:", email);
+        console.log("Received verification data:", verificationData);
+
         // This is where you would get the challenge from the browser's WebAuthn API
-        // For this simulation, we are sending dummy data.
+        // And then send it to the Genkit flow for analysis
         const simulatedWebAuthnData = {
-          challenge: "server-generated-random-string",
+          challenge: verificationData.challenge || "server-generated-random-string",
           userHandle: user.email,
-          clientDataJSON: "e.g., base64-encoded-client-data",
-          authenticatorData: "e.g., base64-encoded-auth-data",
-          signature: "e.g., base64-encoded-signature",
+          clientDataJSON: verificationData.response?.clientDataJSON || "e.g., base64-encoded-client-data",
+          authenticatorData: verificationData.response?.authenticatorData || "e.g., base64-encoded-auth-data",
+          signature: verificationData.response?.signature || "e.g., base64-encoded-signature",
         }
 
         const result = await verifyBiometrics(simulatedWebAuthnData);
+
         if (result.success) {
             await sendNotificationEmail({
                 to: user.email,
                 subject: "Successful Biometric Sign-In",
                 body: "<h1>Security Alert</h1><p>Your account was just accessed using biometrics. If this was not you, please secure your account immediately.</p>"
             });
+            return { ...result, user };
+        } else {
+            return { success: false, message: result.message, user: undefined };
         }
-        return { ...result, user };
+
     } catch (error) {
         console.error("Error verifying biometrics:", error);
         return {
@@ -87,13 +182,13 @@ export async function handleLogin(credentials: UserCredentials): Promise<{ succe
     return { success: true, message: "Login successful!", user };
 }
 
-export async function handleSignup(credentials: UserCredentials): Promise<{ success: boolean, message: string }> {
+export async function handleSignup(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
     const existingUser = await findUserByEmail(credentials.email);
     if (existingUser) {
         return { success: false, message: "An account with this email already exists." };
     }
 
-    await createUser(credentials);
+    const newUser = await createUser(credentials);
 
     await sendNotificationEmail({
         to: credentials.email,
@@ -101,7 +196,7 @@ export async function handleSignup(credentials: UserCredentials): Promise<{ succ
         body: "<h1>Welcome!</h1><p>Thank you for creating your Canara Bank account. We're excited to help you bank more securely.</p>"
     });
 
-    return { success: true, message: "Account created successfully!" };
+    return { success: true, message: "Account created successfully!", user: newUser };
 }
 
 export async function handleForgotPassword(email: string) {

@@ -4,7 +4,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
-import { handleSignup as handleSignupAction } from "@/app/actions"
+import { handleSignup as handleSignupAction, getRegistrationChallenge, verifyRegistration } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,8 +17,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Building, LoaderCircle } from "lucide-react"
+import { Building, Fingerprint, LoaderCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -34,6 +35,7 @@ export default function SignupPage() {
     const { toast } = useToast()
     const formRef = useRef<HTMLFormElement>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [registerBiometrics, setRegisterBiometrics] = useState(false);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -45,24 +47,76 @@ export default function SignupPage() {
         const password = formData.get('password') as string;
         const fullName = formData.get('fullName') as string;
 
-        if (email && password) {
-            const result = await handleSignupAction({ email, password, fullName });
-            if (result.success) {
+        if (email && password && fullName) {
+            const signupResult = await handleSignupAction({ email, password, fullName });
+            if (signupResult.success && signupResult.user) {
+                
+                // If user wants to register biometrics, do it now
+                if (registerBiometrics) {
+                    try {
+                        const challengeResponse = await getRegistrationChallenge(email, fullName);
+                        
+                        // Remap challenge and user.id from Base64URL to ArrayBuffer
+                        const publicKeyCredentialCreationOptions = {
+                           ...challengeResponse,
+                           challenge: Buffer.from(challengeResponse.challenge, 'base64url'),
+                           user: {
+                               ...challengeResponse.user,
+                               id: Buffer.from(challengeResponse.user.id, 'utf8')
+                           }
+                        };
+                        
+                        const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions as any }) as any;
+
+                        // Convert ArrayBuffers to Base64URL for server
+                        const credentialForServer = {
+                          id: credential.id,
+                          rawId: Buffer.from(credential.rawId).toString('base64url'),
+                          response: {
+                            clientDataJSON: Buffer.from(credential.response.clientDataJSON).toString('base64url'),
+                            attestationObject: Buffer.from(credential.response.attestationObject).toString('base64url'),
+                          },
+                          type: credential.type,
+                        };
+
+                        const verificationResult = await verifyRegistration(email, credentialForServer);
+                        if (verificationResult.success) {
+                            toast({
+                                title: "Biometrics Registered!",
+                                description: "You can now sign in using your fingerprint.",
+                            });
+                        } else {
+                           throw new Error("Biometric verification failed.");
+                        }
+
+                    } catch (err: any) {
+                        console.error("Biometric registration failed", err);
+                        toast({
+                            title: "Biometric Registration Failed",
+                            description: err.name === 'NotAllowedError' ? 'Registration was cancelled.' : 'Could not register biometrics.',
+                            variant: "destructive",
+                        });
+                        // Continue to login even if biometrics fail
+                    }
+                }
+
                 toast({
                     title: "Account Created!",
                     description: "Your Canara Bank account has been successfully created. Please sign in to continue.",
-                })
-                router.push("/signin")
+                });
+                router.push("/signin");
+
             } else {
                 toast({
                     title: "Sign Up Failed",
-                    description: result.message,
+                    description: signupResult.message,
                     variant: "destructive",
                 });
             }
         }
         setIsLoading(false);
     }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0f2851] p-4">
     <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
@@ -93,6 +147,15 @@ export default function SignupPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" required />
           </div>
+           <div className="flex items-center space-x-2">
+              <Checkbox id="biometrics" onCheckedChange={(checked) => setRegisterBiometrics(Boolean(checked))} />
+              <label
+                htmlFor="biometrics"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+              >
+                <Fingerprint className="h-4 w-4" /> Register Biometrics on this device
+              </label>
+            </div>
           <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
             {isLoading && <LoaderCircle className="animate-spin mr-2" />}
             Create account

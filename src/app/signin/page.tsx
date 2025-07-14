@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { handleLogin, verifyBiometricLogin } from "@/app/actions";
+import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin } from "@/app/actions";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,10 +43,13 @@ export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
   const [isBiometricPromptOpen, setIsBiometricPromptOpen] = useState(false);
   const [biometricStep, setBiometricStep] = useState<'initial' | 'scanning' | 'success' | 'error'>('initial');
+  const [biometricError, setBiometricError] = useState('');
 
   const handleStandardLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,35 +80,84 @@ export default function SignInPage() {
   };
 
   const handleBiometricSignIn = async () => {
-    setIsBiometricPromptOpen(true);
-    setBiometricStep('scanning');
-    setIsBiometricLoading(true);
-
-    const result = await verifyBiometricLogin();
-    if (result.success && result.user) {
-        setBiometricStep('success');
-        setTimeout(() => {
-            setIsBiometricPromptOpen(false);
-            toast({
-                title: "Biometric Scan Successful",
-                description: "Welcome back! Your identity has been verified.",
-            });
-            router.push(`/dashboard?email=${result.user.email}`);
-        }, 2000);
-    } else {
+    const email = emailRef.current?.value;
+    if (!email) {
+        setBiometricError("Please enter your email address first to look up your biometric credential.");
         setBiometricStep('error');
-        toast({
-            title: "Biometric Scan Failed",
-            description: result.message || "Could not verify identity. Please try again.",
-            variant: "destructive",
-        });
+        return;
     }
+
+    setIsBiometricLoading(true);
+    setBiometricStep('scanning');
+
+    try {
+        // 1. Get challenge from server
+        const challengeResponse = await getAuthenticationChallenge(email);
+
+        if (!challengeResponse.success) {
+            setBiometricError(challengeResponse.message || 'Could not start biometric authentication.');
+            setBiometricStep('error');
+            setIsBiometricLoading(false);
+            return;
+        }
+
+        const options = {
+            challenge: Buffer.from(challengeResponse.challenge!, 'base64url'),
+            rpId: challengeResponse.rpId,
+            allowCredentials: challengeResponse.allowCredentials?.map(cred => ({
+                ...cred,
+                id: Buffer.from(cred.id, 'base64url'),
+            })),
+            userVerification: challengeResponse.userVerification,
+            timeout: challengeResponse.timeout
+        };
+
+        // 2. Call WebAuthn API
+        const credential = await navigator.credentials.get({ publicKey: options as any }) as any;
+        
+        // Convert array buffers to base64url for server
+        const verificationData = {
+            id: credential.id,
+            rawId: Buffer.from(credential.rawId).toString('base64url'),
+            response: {
+                clientDataJSON: Buffer.from(credential.response.clientDataJSON).toString('base64url'),
+                authenticatorData: Buffer.from(credential.response.authenticatorData).toString('base64url'),
+                signature: Buffer.from(credential.response.signature).toString('base64url'),
+                userHandle: credential.response.userHandle ? Buffer.from(credential.response.userHandle).toString('base64url') : null,
+            },
+            type: credential.type,
+            challenge: challengeResponse.challenge, // Pass original challenge back
+        };
+
+        // 3. "Verify" on server
+        const result = await verifyBiometricLogin(email, verificationData);
+        if (result.success && result.user) {
+            setBiometricStep('success');
+            setTimeout(() => {
+                setIsBiometricPromptOpen(false);
+                toast({
+                    title: "Biometric Scan Successful",
+                    description: "Welcome back! Your identity has been verified.",
+                });
+                router.push(`/dashboard?email=${result.user.email}`);
+            }, 2000);
+        } else {
+            setBiometricError(result.message || "Could not verify identity. Please try again.");
+            setBiometricStep('error');
+        }
+    } catch (error: any) {
+        console.error("Biometric sign-in error:", error);
+        setBiometricError(error.name === 'NotAllowedError' ? 'Authentication cancelled.' : 'An unexpected error occurred.');
+        setBiometricStep('error');
+    }
+    
     setIsBiometricLoading(false);
   };
 
   const resetBiometricPrompt = () => {
     setIsBiometricPromptOpen(false);
     setBiometricStep('initial');
+    setBiometricError('');
   }
 
   return (
@@ -130,6 +182,7 @@ export default function SignInPage() {
                   placeholder="suresh@example.com"
                   required
                   defaultValue="analyst@canara.co"
+                  ref={emailRef}
                 />
               </div>
               <div className="grid gap-2">
@@ -192,13 +245,16 @@ export default function SignInPage() {
                 {biometricStep === 'initial' && (
                     <>
                         <p className="text-muted-foreground text-sm text-center">Ready to authenticate using your device's security features (e.g., fingerprint, face recognition).</p>
-                        <Button onClick={handleBiometricSignIn}>Start Scan</Button>
+                        <Button onClick={handleBiometricSignIn} disabled={isBiometricLoading}>
+                            {isBiometricLoading ? <LoaderCircle className="animate-spin" /> : 'Start Scan'}
+                        </Button>
                     </>
                 )}
                 {biometricStep === 'scanning' && (
                     <>
                         <LoaderCircle className="h-16 w-16 animate-spin text-primary" />
                         <p className="text-muted-foreground animate-pulse">Scanning...</p>
+                        <p className="text-xs text-muted-foreground text-center">Follow the instructions from your browser or operating system.</p>
                     </>
                 )}
                 {biometricStep === 'success' && (
@@ -215,6 +271,7 @@ export default function SignInPage() {
                             <Fingerprint className="h-10 w-10 text-white" />
                         </div>
                         <p className="text-destructive">Verification Failed</p>
+                        <p className="text-sm text-muted-foreground text-center">{biometricError}</p>
                     </>
                 )}
             </div>
