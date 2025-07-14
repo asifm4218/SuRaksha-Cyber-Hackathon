@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   UserCircle,
   Wallet,
+  Building
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -41,9 +42,18 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Logo } from "@/components/logo";
 import { useIdle } from "@/hooks/use-idle";
 import { handleSessionTimeout } from "@/app/actions";
+
+function Logo({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      <Building className="h-6 w-6 text-primary" />
+      <span className="text-lg font-semibold tracking-tight">Canara Bank</span>
+    </div>
+  );
+}
+
 
 const navItems = [
   { href: "/dashboard", icon: LayoutGrid, label: "Dashboard" },
@@ -84,7 +94,7 @@ export default function DashboardLayout({
       <div className="hidden border-r bg-card md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/dashboard">
+            <Link href="/">
               <Logo />
             </Link>
           </div>
@@ -213,7 +223,7 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-[#0f2851]">
           {children}
         </main>
       </div>
@@ -232,7 +242,7 @@ export default function DashboardLayout({
             </DialogHeader>
             <DialogFooter>
                 <Button onClick={handleLogout} className="w-full">
-                    Return to Sign In
+                    Return to Home
                 </Button>
             </DialogFooter>
         </DialogContent>

@@ -15,8 +15,17 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Logo } from "@/components/logo"
 import { useToast } from "@/hooks/use-toast"
+import { Building } from "lucide-react"
+
+function Logo({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      <Building className="h-8 w-8 text-primary" />
+      <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
+    </div>
+  );
+}
 
 export default function ForgotPasswordPage() {
     const router = useRouter()
@@ -37,8 +46,8 @@ export default function ForgotPasswordPage() {
     }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-[#003366] p-4">
+        <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
         <CardHeader className="items-center text-center">
             <Logo className="mb-4" />
             <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
@@ -64,7 +73,7 @@ export default function ForgotPasswordPage() {
             </form>
             <div className="mt-4 text-center text-sm">
                 <Link href="/" className="underline">
-                    Back to Sign In
+                    Back to Home
                 </Link>
             </div>
         </CardContent>

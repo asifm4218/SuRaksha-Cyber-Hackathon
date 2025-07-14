@@ -1,258 +1,131 @@
 
 "use client";
 
+import { Banknote, BookOpen, Building, ChevronDown, Clock, Globe, LandPlot, Mail, MapPin, Milestone, Moon, Phone, PlayCircle, Search, ShieldCheck, Sun, User, UserPlus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Fingerprint, LoaderCircle, Check, ShieldQuestion, ShieldCheck } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/logo";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { verifyBiometricLogin, handleLogin } from "./actions";
-import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
-type BiometricState = "idle" | "scanning" | "analyzing" | "success" | "error";
+export default function LandingPage() {
+    const router = useRouter();
 
-export default function LoginPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [isBiometricOpen, setIsBiometricOpen] = useState(false);
-  const [biometricState, setBiometricState] = useState<BiometricState>("idle");
-  const [biometricMessage, setBiometricMessage] = useState("Use your fingerprint to sign in.");
-  const [progress, setProgress] = useState(0);
-  const [captchaState, setCaptchaState] = useState<"unchecked" | "checking" | "verified">("unchecked");
-  
-  const formRef = useRef<HTMLFormElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-
-  const onLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (captchaState !== 'verified' || !formRef.current) return;
-
-    setIsLoading(true);
-    const formData = new FormData(formRef.current);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    const result = await handleLogin({ email, password });
-
-    if (result.success) {
-      toast({
-        title: "Sign In Successful",
-        description: "Welcome back!",
-      });
-      router.push("/dashboard");
-    } else {
-      toast({
-        title: "Sign In Failed",
-        description: result.message,
-        variant: "destructive",
-      });
+    const handleLoginClick = () => {
+        router.push("/dashboard"); 
     }
-    setIsLoading(false);
-  };
-
-  const handleCaptchaCheck = () => {
-    if (captchaState === 'unchecked') {
-      setCaptchaState('checking');
-      setTimeout(() => {
-        setCaptchaState('verified');
-      }, 1500);
-    }
-  }
-
-  const resetBiometricDialog = useCallback(() => {
-    setBiometricState('idle');
-    setProgress(0);
-    setBiometricMessage("Use your fingerprint to sign in.");
-  }, []);
-
-  const handleBiometricLogin = () => {
-    setIsBiometricOpen(true);
-    setBiometricState("scanning");
-    setBiometricMessage("Place your finger on the sensor.");
-    setProgress(0);
-  };
-  
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isBiometricOpen && biometricState === "scanning") {
-        timer = setTimeout(() => {
-            setBiometricState("analyzing");
-            setBiometricMessage("Analyzing biometric and behavioral data...");
-        }, 1500);
-    }
-    return () => clearTimeout(timer);
-  }, [isBiometricOpen, biometricState]);
-
-
-  useEffect(() => {
-    if (biometricState !== "analyzing") return;
-    
-    let progressInterval: NodeJS.Timeout;
-
-    const callVerification = async () => {
-        const result = await verifyBiometricLogin();
-        clearInterval(progressInterval);
-        setProgress(100);
-
-        if (result.success) {
-            setBiometricState("success");
-            setBiometricMessage(result.message);
-            setTimeout(() => {
-                setIsBiometricOpen(false);
-                router.push("/dashboard");
-            }, 2000);
-        } else {
-            setBiometricState("error");
-            setBiometricMessage(result.message);
-        }
-    };
-
-    progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
-    }, 200);
-    
-    callVerification();
-
-    return () => clearInterval(progressInterval);
-  }, [biometricState, router]);
-
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="items-center text-center">
-          <Logo className="mb-4" />
-          <CardTitle className="text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
-          <CardDescription>Securely sign in to your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form ref={formRef} onSubmit={onLoginSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                defaultValue="analyst@canara.co"
-              />
+    <div className="bg-background text-foreground min-h-screen flex flex-col">
+      <header className="w-full">
+        {/* Top bar */}
+        <div className="bg-[#0f2851] text-white text-xs">
+          <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+                <a href="#" className="flex items-center gap-1.5 hover:text-yellow-400">
+                    <Phone className="w-3 h-3" />
+                    1800-425-0018
+                </a>
+                <a href="#" className="flex items-center gap-1.5 hover:text-yellow-400">
+                    <Mail className="w-3 h-3" />
+                    customercare@canarabank.com
+                </a>
+                <a href="#" className="flex items-center gap-1.5 hover:text-yellow-400">
+                    <MapPin className="w-3 h-3" />
+                    Find Branch/ATM
+                </a>
             </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
-              <Input id="password" name="password" type="password" required defaultValue="password123" />
+            <div className="flex items-center gap-4">
+                <span className="text-gray-400">Available in:</span>
+                <Button variant="outline" size="sm" className="bg-transparent border-yellow-400 text-yellow-400 h-6 px-2 text-xs">Hindi</Button>
+                <a href="#" className="flex items-center gap-1.5 hover:text-yellow-400">
+                    <Globe className="w-3 h-3" />
+                    English <ChevronDown className="w-3 h-3" />
+                </a>
+                <Sun className="w-4 h-4 cursor-pointer hover:text-yellow-400" />
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 h-6 px-2">Close</Button>
             </div>
-
-            <div className="flex items-center space-x-2 rounded-md border border-input p-3 bg-secondary/50">
-                <div onClick={handleCaptchaCheck} className="cursor-pointer">
-                    <div className="h-6 w-6 rounded-sm border border-primary bg-background flex items-center justify-center">
-                        {captchaState === 'checking' && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        {captchaState === 'verified' && <Check className="h-4 w-4 text-primary" />}
-                    </div>
-                </div>
-                <Label htmlFor="terms" className="flex-1">
-                  {captchaState === 'checking' ? 'Analyzing...' : "I am not a robot"}
-                </Label>
-                <div className="text-center">
-                    <ShieldQuestion className="h-6 w-6 text-muted-foreground"/>
-                    <p className="text-xs text-muted-foreground">Canara AI</p>
-                </div>
-            </div>
-
-            <Button type="submit" className="w-full font-semibold" disabled={captchaState !== 'verified' || isLoading}>
-              {isLoading && <LoaderCircle className="animate-spin mr-2" />}
-              Sign In
-            </Button>
-            <Button variant="outline" className="w-full" type="button" onClick={handleBiometricLogin}>
-              Sign In with Biometrics
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline">
-              Sign up
-            </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Dialog open={isBiometricOpen} onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            resetBiometricDialog();
-          }
-          setIsBiometricOpen(isOpen);
-      }}>
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Biometric Authentication</DialogTitle>
-                <DialogDescription>
-                    {biometricMessage}
-                </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col items-center justify-center gap-6 py-8">
-                {biometricState !== 'success' && (
-                    <Fingerprint 
-                        className={cn(
-                            "h-24 w-24 text-muted-foreground transition-colors duration-500",
-                            biometricState === 'scanning' && 'animate-pulse text-primary',
-                            (biometricState === 'analyzing' || biometricState === 'success') && 'text-primary',
-                            biometricState === 'error' && 'text-destructive'
-                        )}
-                    />
-                )}
-                {biometricState === 'success' && (
-                    <ShieldCheck className="h-24 w-24 text-green-500" />
-                )}
-
-                {(biometricState === 'analyzing' || biometricState === 'success') && (
-                    <div className="w-full max-w-xs space-y-2">
-                         <Progress value={progress} className="h-2" />
+        {/* Main Header */}
+        <div className="bg-[#003366] text-white sticky top-0 z-50 shadow-md">
+            <div className="container mx-auto px-4 flex justify-between items-center h-20">
+                <div className="flex items-center gap-3">
+                    <Building className="w-10 h-10" />
+                    <div>
+                        <h1 className="text-2xl font-bold">Canara Bank</h1>
+                        <p className="text-xs text-gray-300">Together We Can</p>
                     </div>
-                )}
-                 {biometricState === 'scanning' && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Waiting for input...
-                    </p>
-                )}
+                </div>
+
+                <div className="flex items-center gap-6">
+                    <div className="bg-white/10 p-2 rounded-full cursor-pointer">
+                        <Search className="w-5 h-5" />
+                    </div>
+                    <nav className="flex items-center gap-6 text-sm font-medium">
+                        <a href="#" className="flex items-center gap-1 hover:text-yellow-400">Personal Banking <ChevronDown className="w-4 h-4" /></a>
+                        <a href="#" className="flex items-center gap-1 hover:text-yellow-400">Corporate Banking <ChevronDown className="w-4 h-4" /></a>
+                        <a href="#" className="flex items-center gap-1 hover:text-yellow-400">Digital Banking <ChevronDown className="w-4 h-4" /></a>
+                        <a href="#" className="flex items-center gap-1 hover:text-yellow-400">Investments <ChevronDown className="w-4 h-4" /></a>
+                        <a href="#" className="flex items-center gap-1 hover:text-yellow-400">NRI Services <ChevronDown className="w-4 h-4" /></a>
+                    </nav>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" className="bg-transparent border-white/50 text-white hover:bg-white/10" onClick={handleLoginClick}>
+                        <User className="mr-2 h-4 w-4" /> Login
+                    </Button>
+                    <Button className="bg-yellow-400 text-black hover:bg-yellow-500">
+                        <UserPlus className="mr-2 h-4 w-4" /> Apply Now
+                    </Button>
+                </div>
             </div>
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setIsBiometricOpen(false)}>
-                    Cancel
+        </div>
+      </header>
+      
+      {/* Hero Section */}
+      <main className="flex-grow">
+        <div className="relative bg-cover bg-center text-white" style={{ backgroundImage: "url('https://placehold.co/1920x1080/0f2851/334d6e.png?text=.')", backgroundBlendMode: 'overlay', backgroundColor: 'rgba(15, 40, 81, 0.8)' }} data-ai-hint="desk money">
+           <div className="container mx-auto px-4 py-32 flex flex-col justify-center items-start">
+              <h2 className="text-6xl font-extrabold max-w-2xl leading-tight">Digital Banking Made Simple</h2>
+              <p className="text-lg mt-4 max-w-xl text-gray-300">Experience seamless banking with our advanced digital solutions</p>
+              <p className="mt-2 max-w-xl text-gray-300">
+                Access your accounts, transfer money, pay bills, and manage investments - all from your smartphone or computer.
+              </p>
+              <div className="mt-8 flex gap-4">
+                <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-200 font-bold text-base">
+                  Explore Digital Banking <Milestone className="ml-2 h-5 w-5" />
                 </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 hover:text-white font-bold text-base">
+                  <PlayCircle className="mr-2 h-5 w-5" /> Watch Demo
+                </Button>
+              </div>
+            </div>
+        </div>
+      </main>
+
+      {/* Stats Footer */}
+      <footer className="bg-[#003366] text-white">
+        <div className="container mx-auto px-4 py-8">
+            <div className="grid grid-cols-3 gap-8 text-center">
+                <div className="flex flex-col items-center gap-2">
+                    <User className="w-8 h-8 text-yellow-400" />
+                    <p className="text-3xl font-bold">10M+</p>
+                    <p className="text-sm text-gray-300">Happy Customers</p>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                    <ShieldCheck className="w-8 h-8 text-yellow-400" />
+                    <p className="text-3xl font-bold">100%</p>
+                    <p className="text-sm text-gray-300">Secure Banking</p>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                    <Clock className="w-8 h-8 text-yellow-400" />
+                    <p className="text-3xl font-bold">85+</p>
+                    <p className="text-sm text-gray-300">Years of Trust</p>
+                </div>
+            </div>
+        </div>
+      </footer>
+
     </div>
   );
 }
