@@ -17,7 +17,7 @@ const dbPath = path.join(process.cwd(), 'users.json');
 
 // Pre-populate with a default user for demonstration purposes
 const defaultUsers: UserCredentials[] = [
-  { email: 'analyst@verisafe.co', password: 'password123', fullName: 'Security Analyst' },
+  { email: 'analyst@canara.co', password: 'password123', fullName: 'Security Analyst' },
 ];
 
 async function readUsers(): Promise<UserCredentials[]> {

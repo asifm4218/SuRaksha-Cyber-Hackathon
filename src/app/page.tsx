@@ -157,7 +157,7 @@ export default function LoginPage() {
                 type="email"
                 placeholder="m@example.com"
                 required
-                defaultValue="analyst@verisafe.co"
+                defaultValue="analyst@canara.co"
               />
             </div>
             <div className="grid gap-2">
@@ -185,7 +185,7 @@ export default function LoginPage() {
                 </Label>
                 <div className="text-center">
                     <ShieldQuestion className="h-6 w-6 text-muted-foreground"/>
-                    <p className="text-xs text-muted-foreground">VeriSafe AI</p>
+                    <p className="text-xs text-muted-foreground">Canara AI</p>
                 </div>
             </div>
 

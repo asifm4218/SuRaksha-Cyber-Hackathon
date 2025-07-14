@@ -40,7 +40,7 @@ export default function SignupPage() {
             if (result.success) {
                 toast({
                     title: "Account Created!",
-                    description: "Your VeriSafe account has been successfully created. Please sign in to continue.",
+                    description: "Your Canara Bank account has been successfully created. Please sign in to continue.",
                 })
                 router.push("/")
             } else {
@@ -60,7 +60,7 @@ export default function SignupPage() {
         <Logo className="mb-4" />
         <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
-          Enter your information to create a new VeriSafe account.
+          Enter your information to create a new Canara Bank account.
         </CardDescription>
       </CardHeader>
       <CardContent>

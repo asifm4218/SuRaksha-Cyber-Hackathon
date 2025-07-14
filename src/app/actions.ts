@@ -37,7 +37,7 @@ export async function verifyBiometricLogin(): Promise<{
         const result = await verifyBiometrics({ biometricData: "simulated-fingerprint-data" });
         if (result.success) {
             await sendNotificationEmail({
-                to: "analyst@verisafe.co",
+                to: "analyst@canara.co",
                 subject: "Successful Biometric Sign-In",
                 body: "<h1>Security Alert</h1><p>Your account was just accessed using biometrics. If this was not you, please secure your account immediately.</p>"
             });
@@ -64,7 +64,7 @@ export async function handleLogin(credentials: UserCredentials): Promise<{ succe
     await sendNotificationEmail({
         to: credentials.email,
         subject: "Successful Sign-In",
-        body: "<h1>Security Alert</h1><p>We detected a new sign-in to your VeriSafe account. If this was not you, please secure your account immediately.</p>"
+        body: "<h1>Security Alert</h1><p>We detected a new sign-in to your Canara Bank account. If this was not you, please secure your account immediately.</p>"
     });
 
     return { success: true, message: "Login successful!" };
@@ -80,8 +80,8 @@ export async function handleSignup(credentials: UserCredentials): Promise<{ succ
 
     await sendNotificationEmail({
         to: credentials.email,
-        subject: "Welcome to VeriSafe!",
-        body: "<h1>Welcome!</h1><p>Thank you for creating your VeriSafe account. We're excited to help you bank more securely.</p>"
+        subject: "Welcome to Canara Bank!",
+        body: "<h1>Welcome!</h1><p>Thank you for creating your Canara Bank account. We're excited to help you bank more securely.</p>"
     });
 
     return { success: true, message: "Account created successfully!" };
@@ -90,16 +90,16 @@ export async function handleSignup(credentials: UserCredentials): Promise<{ succ
 export async function handleForgotPassword(email: string) {
     await sendNotificationEmail({
         to: email,
-        subject: "Your VeriSafe Password Reset Link",
+        subject: "Your Canara Bank Password Reset Link",
         body: "<h1>Password Reset</h1><p>Click the link below to reset your password. This link is valid for 1 hour.</p><p><a href='#'>Reset Password (Simulated)</a></p>"
     });
 }
 
 export async function handleSessionTimeout() {
     await sendNotificationEmail({
-        to: "analyst@verisafe.co",
+        to: "analyst@canara.co",
         subject: "Security Alert: Session Timeout",
-        body: "<h1>Security Alert</h1><p>Your session on VeriSafe has been automatically terminated due to inactivity. This is a security measure to protect your account.</p>"
+        body: "<h1>Security Alert</h1><p>Your session on Canara Bank has been automatically terminated due to inactivity. This is a security measure to protect your account.</p>"
     });
 }
 
