@@ -64,7 +64,7 @@ export default function SignupPage() {
         setIsLoading(false);
     }
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#003366] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#0f2851] p-4">
     <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
       <CardHeader className="items-center text-center">
         <Logo className="mb-4" />

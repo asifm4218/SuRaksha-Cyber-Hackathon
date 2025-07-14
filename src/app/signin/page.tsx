@@ -87,7 +87,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#003366] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#0f2851] p-4">
       <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
         <CardHeader className="items-center text-center">
           <Logo className="mb-4" />
@@ -135,10 +135,14 @@ export default function SignInPage() {
         </CardContent>
         <CardFooter className="flex-col gap-4">
           <div className="relative w-full">
-            <Separator />
-            <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-card px-2 text-xs text-muted-foreground">
-              OR
-            </span>
+            <div className="absolute inset-0 flex items-center">
+                <Separator />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                    Or
+                </span>
+            </div>
           </div>
           <Button
             variant="outline"
