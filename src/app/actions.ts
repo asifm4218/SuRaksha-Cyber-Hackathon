@@ -1,3 +1,4 @@
+
 "use server";
 
 import { summarizeAnomalyScores } from "@/ai/flows/summarize-anomaly-scores";
@@ -5,6 +6,7 @@ import type { SummarizeAnomalyScoresOutput } from "@/ai/flows/summarize-anomaly-
 import { verifyBiometrics } from "@/ai/flows/verify-biometrics-flow";
 import { sendEmailNotification } from "@/ai/flows/send-email-notification-flow";
 import type { SendEmailNotificationInput } from "@/ai/flows/send-email-notification-flow";
+import { createUser, findUserByEmail, type UserCredentials } from "@/services/user-service";
 
 export async function getAnomalySummary(): Promise<{
   success: boolean;
@@ -50,20 +52,39 @@ export async function verifyBiometricLogin(): Promise<{
     }
 }
 
-export async function handleLogin(email: string) {
+export async function handleLogin(credentials: UserCredentials): Promise<{ success: boolean, message: string }> {
+    const user = await findUserByEmail(credentials.email);
+    if (!user) {
+        return { success: false, message: "User not found. Please sign up." };
+    }
+
+    // In a real app, you'd verify the password here.
+    // For the simulation, just finding the user is enough.
+
     await sendNotificationEmail({
-        to: email,
+        to: credentials.email,
         subject: "Successful Sign-In",
         body: "<h1>Security Alert</h1><p>We detected a new sign-in to your VeriSafe account. If this was not you, please secure your account immediately.</p>"
     });
+
+    return { success: true, message: "Login successful!" };
 }
 
-export async function handleSignup(email: string) {
+export async function handleSignup(credentials: UserCredentials): Promise<{ success: boolean, message: string }> {
+    const existingUser = await findUserByEmail(credentials.email);
+    if (existingUser) {
+        return { success: false, message: "An account with this email already exists." };
+    }
+
+    await createUser(credentials);
+
     await sendNotificationEmail({
-        to: email,
+        to: credentials.email,
         subject: "Welcome to VeriSafe!",
         body: "<h1>Welcome!</h1><p>Thank you for creating your VeriSafe account. We're excited to help you bank more securely.</p>"
     });
+
+    return { success: true, message: "Account created successfully!" };
 }
 
 export async function handleForgotPassword(email: string) {

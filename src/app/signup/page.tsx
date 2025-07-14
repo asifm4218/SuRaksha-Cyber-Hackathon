@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { handleSignup as handleSignupAction } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
@@ -18,23 +18,40 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
 import { useToast } from "@/hooks/use-toast"
+import { LoaderCircle } from "lucide-react"
 
 export default function SignupPage() {
     const router = useRouter()
     const { toast } = useToast()
-    const emailRef = useRef<HTMLInputElement>(null);
+    const formRef = useRef<HTMLFormElement>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
-        const email = emailRef.current?.value;
-        if (email) {
-            await handleSignupAction(email);
-            toast({
-                title: "Account Created!",
-                description: "Your VeriSafe account has been successfully created. Please sign in to continue.",
-            })
-            router.push("/")
+        if (!formRef.current) return;
+        
+        setIsLoading(true);
+        const formData = new FormData(formRef.current);
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+
+        if (email && password) {
+            const result = await handleSignupAction({ email, password });
+            if (result.success) {
+                toast({
+                    title: "Account Created!",
+                    description: "Your VeriSafe account has been successfully created. Please sign in to continue.",
+                })
+                router.push("/")
+            } else {
+                toast({
+                    title: "Sign Up Failed",
+                    description: result.message,
+                    variant: "destructive",
+                });
+            }
         }
+        setIsLoading(false);
     }
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -47,16 +64,16 @@ export default function SignupPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSignup} className="grid gap-4">
+        <form ref={formRef} onSubmit={handleSignup} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="full-name">Full name</Label>
-            <Input id="full-name" placeholder="Suresh Kumar" required />
+            <Input id="full-name" name="fullName" placeholder="Suresh Kumar" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              ref={emailRef}
+              name="email"
               type="email"
               placeholder="suresh@example.com"
               required
@@ -64,9 +81,10 @@ export default function SignupPage() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required />
+            <Input id="password" name="password" type="password" required />
           </div>
-          <Button type="submit" className="w-full font-semibold">
+          <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
+            {isLoading && <LoaderCircle className="animate-spin mr-2" />}
             Create account
           </Button>
         </form>

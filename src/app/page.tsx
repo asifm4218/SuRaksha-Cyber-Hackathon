@@ -28,25 +28,48 @@ import { Logo } from "@/components/logo";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { verifyBiometricLogin, handleLogin } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 type BiometricState = "idle" | "scanning" | "analyzing" | "success" | "error";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [isBiometricOpen, setIsBiometricOpen] = useState(false);
   const [biometricState, setBiometricState] = useState<BiometricState>("idle");
   const [biometricMessage, setBiometricMessage] = useState("Use your fingerprint to sign in.");
   const [progress, setProgress] = useState(0);
   const [captchaState, setCaptchaState] = useState<"unchecked" | "checking" | "verified">("unchecked");
-  const emailRef = useRef<HTMLInputElement>(null);
+  
+  const formRef = useRef<HTMLFormElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onLoginSubmit = (e: React.FormEvent) => {
+
+  const onLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (captchaState !== 'verified' || !emailRef.current?.value) {
-        return;
+    if (captchaState !== 'verified' || !formRef.current) return;
+
+    setIsLoading(true);
+    const formData = new FormData(formRef.current);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const result = await handleLogin({ email, password });
+
+    if (result.success) {
+      toast({
+        title: "Sign In Successful",
+        description: "Welcome back!",
+      });
+      router.push("/dashboard");
+    } else {
+      toast({
+        title: "Sign In Failed",
+        description: result.message,
+        variant: "destructive",
+      });
     }
-    handleLogin(emailRef.current.value);
-    router.push("/dashboard");
+    setIsLoading(false);
   };
 
   const handleCaptchaCheck = () => {
@@ -125,12 +148,12 @@ export default function LoginPage() {
           <CardDescription>Securely sign in to your Canara Bank account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onLoginSubmit} className="grid gap-4">
+          <form ref={formRef} onSubmit={onLoginSubmit} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                ref={emailRef}
+                name="email"
                 type="email"
                 placeholder="m@example.com"
                 required
@@ -147,7 +170,7 @@ export default function LoginPage() {
                   Forgot your password?
                 </Link>
               </div>
-              <Input id="password" type="password" required defaultValue="password123" />
+              <Input id="password" name="password" type="password" required defaultValue="password123" />
             </div>
 
             <div className="flex items-center space-x-2 rounded-md border border-input p-3 bg-secondary/50">
@@ -166,7 +189,8 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            <Button type="submit" className="w-full font-semibold" disabled={captchaState !== 'verified'}>
+            <Button type="submit" className="w-full font-semibold" disabled={captchaState !== 'verified' || isLoading}>
+              {isLoading && <LoaderCircle className="animate-spin mr-2" />}
               Sign In
             </Button>
             <Button variant="outline" className="w-full" type="button" onClick={handleBiometricLogin}>
