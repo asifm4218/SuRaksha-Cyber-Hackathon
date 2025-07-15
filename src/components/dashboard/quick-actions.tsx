@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -10,18 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUpRight, Receipt, LoaderCircle } from "lucide-react";
-import type { Transaction } from "@/lib/mock-data";
+import { addTransaction } from "@/app/actions";
 
 type PendingAction = {
     type: 'transfer' | 'bill';
     data: any;
 } | null;
 
-interface QuickActionsProps {
-    onTransaction: (transaction: Omit<Transaction, 'id' | 'date' | 'status'>) => void;
-}
-
-export function QuickActions({ onTransaction }: QuickActionsProps) {
+export function QuickActions() {
+    const router = useRouter();
     const { toast } = useToast();
     const [isTransferOpen, setIsTransferOpen] = useState(false);
     const [isPayBillOpen, setIsPayBillOpen] = useState(false);
@@ -32,6 +30,23 @@ export function QuickActions({ onTransaction }: QuickActionsProps) {
 
     const transferFormRef = useRef<HTMLFormElement>(null);
     const billPayFormRef = useRef<HTMLFormElement>(null);
+
+    const handleTransactionSuccess = (type: 'transfer' | 'bill', data: any) => {
+        if (type === 'transfer') {
+             toast({
+                title: "Transfer Successful",
+                description: `Sent ₹${data.amount} to ${data.recipient}.`,
+            });
+        } else {
+             toast({
+                title: "Bill Paid",
+                description: `Paid ₹${data['bill-amount']} for ${data.biller}.`,
+            });
+        }
+        // Refresh the page to show the new transaction
+        router.refresh();
+    };
+
 
     const handleInitiateAction = (e: React.FormEvent, type: 'transfer' | 'bill') => {
         e.preventDefault();
@@ -44,41 +59,48 @@ export function QuickActions({ onTransaction }: QuickActionsProps) {
         setIsMpinDialogOpen(true);
     };
 
-    const handleMpinVerification = () => {
+    const handleMpinVerification = async () => {
         setIsVerifyingMpin(true);
 
-        setTimeout(() => {
-            if (mpin === "180805") {
-                if (pendingAction?.type === 'transfer') {
-                    const amount = parseFloat(pendingAction.data.amount);
-                    onTransaction({
-                        description: `Transfer to ${pendingAction.data.recipient}`,
-                        amount: amount,
-                        type: 'Debit',
-                    });
-                } else if (pendingAction?.type === 'bill') {
-                    const amount = parseFloat(pendingAction.data['bill-amount']);
-                    onTransaction({
-                        description: `Bill payment - ${pendingAction.data.biller}`,
-                        amount: amount,
-                        type: 'Debit',
-                    });
-                }
-            } else {
-                toast({
-                    title: "Incorrect MPIN",
-                    description: "The MPIN you entered is incorrect. Please try again.",
-                    variant: "destructive",
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (mpin === "180805") {
+            if (pendingAction?.type === 'transfer') {
+                const amount = parseFloat(pendingAction.data.amount as string);
+                const result = await addTransaction({
+                    description: `Transfer to ${pendingAction.data.recipient}`,
+                    amount: amount,
+                    type: 'Debit',
                 });
+                if (result.success) {
+                    handleTransactionSuccess('transfer', pendingAction.data);
+                }
+            } else if (pendingAction?.type === 'bill') {
+                const amount = parseFloat(pendingAction.data['bill-amount'] as string);
+                 const result = await addTransaction({
+                    description: `Bill payment - ${pendingAction.data.biller}`,
+                    amount: amount,
+                    type: 'Debit',
+                });
+                if (result.success) {
+                    handleTransactionSuccess('bill', pendingAction.data);
+                }
             }
-            
-            setIsVerifyingMpin(false);
-            setIsMpinDialogOpen(false);
-            setMpin("");
-            setPendingAction(null);
-            if (transferFormRef.current) transferFormRef.current.reset();
-            if (billPayFormRef.current) billPayFormRef.current.reset();
-        }, 1000);
+        } else {
+            toast({
+                title: "Incorrect MPIN",
+                description: "The MPIN you entered is incorrect. Please try again.",
+                variant: "destructive",
+            });
+        }
+        
+        setIsVerifyingMpin(false);
+        setIsMpinDialogOpen(false);
+        setMpin("");
+        setPendingAction(null);
+        if (transferFormRef.current) transferFormRef.current.reset();
+        if (billPayFormRef.current) billPayFormRef.current.reset();
     };
 
 

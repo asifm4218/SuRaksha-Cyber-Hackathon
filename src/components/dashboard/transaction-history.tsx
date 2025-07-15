@@ -33,23 +33,23 @@ import type { Transaction } from "@/lib/mock-data"
 import { format } from 'date-fns'
 
 interface TransactionHistoryProps {
-    transactions: Transaction[];
+    initialTransactions: Transaction[];
 }
 
-export function TransactionHistory({ transactions: allTransactions }: TransactionHistoryProps) {
-    const [filteredTransactions, setFilteredTransactions] = React.useState(allTransactions);
+export function TransactionHistory({ initialTransactions }: TransactionHistoryProps) {
+    const [filteredTransactions, setFilteredTransactions] = React.useState(initialTransactions);
     const [activeTab, setActiveTab] = React.useState('all');
     const [currentPage, setCurrentPage] = React.useState(1);
     const [searchTerm, setSearchTerm] = React.useState("");
     const transactionsPerPage = 10;
 
     React.useEffect(() => {
-        let transactions = allTransactions;
+        let transactions = initialTransactions;
 
         if (activeTab === 'sent') {
-            transactions = allTransactions.filter(t => t.type === 'Debit');
+            transactions = initialTransactions.filter(t => t.type === 'Debit');
         } else if (activeTab === 'received') {
-            transactions = allTransactions.filter(t => t.type === 'Credit');
+            transactions = initialTransactions.filter(t => t.type === 'Credit');
         }
 
         if (searchTerm) {
@@ -58,7 +58,7 @@ export function TransactionHistory({ transactions: allTransactions }: Transactio
 
         setFilteredTransactions(transactions);
         setCurrentPage(1); // Reset to first page on filter change
-    }, [allTransactions, activeTab, searchTerm]);
+    }, [initialTransactions, activeTab, searchTerm]);
 
     const handlePageChange = (direction: 'next' | 'prev') => {
         if (direction === 'next' && currentPage < Math.ceil(filteredTransactions.length / transactionsPerPage)) {

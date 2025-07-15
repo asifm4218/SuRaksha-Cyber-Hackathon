@@ -17,7 +17,7 @@ export default async function TransactionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <TransactionHistory transactions={transactions} />
+          <TransactionHistory initialTransactions={transactions} />
         </CardContent>
       </Card>
     </div>

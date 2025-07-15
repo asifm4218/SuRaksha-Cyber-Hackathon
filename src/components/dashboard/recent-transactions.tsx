@@ -1,4 +1,6 @@
 
+"use client";
+
 import { MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,13 +29,21 @@ import {
 import type { Transaction } from "@/lib/mock-data";
 import { Skeleton } from "../ui/skeleton";
 import { format } from 'date-fns';
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface RecentTransactionsProps {
-  transactions: Transaction[];
-  isLoading: boolean;
+  initialTransactions: Transaction[];
 }
 
-export function RecentTransactions({ transactions, isLoading }: RecentTransactionsProps) {
+export function RecentTransactions({ initialTransactions }: RecentTransactionsProps) {
+  const [transactions, setTransactions] = useState(initialTransactions);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+      setTransactions(initialTransactions);
+  }, [initialTransactions]);
+
   const recentTransactions = transactions.slice(0, 5);
 
   return (
@@ -46,9 +56,9 @@ export function RecentTransactions({ transactions, isLoading }: RecentTransactio
           </CardDescription>
         </div>
         <Button asChild size="sm" className="ml-auto gap-1">
-          <a href="/dashboard/transactions">
+          <Link href="/dashboard/transactions">
             View All
-          </a>
+          </Link>
         </Button>
       </CardHeader>
       <CardContent>
