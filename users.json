@@ -17,5 +17,15 @@
     "email": "alice123@gmail.com",
     "password": "123",
     "fullName": "Alice"
+  },
+  {
+    "email": "kishorejv.cse2023@citchennai.net",
+    "password": "imbatman",
+    "fullName": "Joegoldberg"
+  },
+  {
+    "email": "kishorejv.cse2023@citchenna.net",
+    "password": "imbatman",
+    "fullName": "Joegoldberg"
   }
 ]
