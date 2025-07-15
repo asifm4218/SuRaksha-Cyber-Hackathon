@@ -1,4 +1,4 @@
-
+import { TransactionHistory } from "@/components/dashboard/transaction-history";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function TransactionsPage() {
@@ -9,11 +9,11 @@ export default function TransactionsPage() {
         <CardHeader>
           <CardTitle>Transaction History</CardTitle>
           <CardDescription>
-            A detailed log of all your transactions.
+            A detailed log of all your transactions. Use the filters to narrow down your search.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Transactions page content goes here.</p>
+          <TransactionHistory />
         </CardContent>
       </Card>
     </div>
