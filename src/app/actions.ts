@@ -183,9 +183,14 @@ export async function handleLogin(credentials: UserCredentials): Promise<{ succe
     if (user.password !== credentials.password) {
         return { success: false, message: "Invalid email or password." };
     }
+
+    await sendNotificationEmail({
+        to: user.email,
+        subject: "Successful Sign-In",
+        body: "<h1>Security Alert</h1><p>We detected a new sign-in to your VeriSafe account. If this was not you, please secure your account immediately.</p>"
+    });
     
-    // Don't send notification here, wait for 2FA
-    return { success: true, message: "Password verified. Please complete 2FA.", user };
+    return { success: true, message: "Login successful!", user };
 }
 
 export async function sendTwoFactorCode(email: string): Promise<{ success: boolean }> {
