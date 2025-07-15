@@ -23,7 +23,7 @@ function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Building className="h-8 w-8 text-primary" />
-      <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
+      <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
     </div>
   );
 }
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
     }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0f2851] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
         <CardHeader className="items-center text-center">
             <Logo className="mb-4" />

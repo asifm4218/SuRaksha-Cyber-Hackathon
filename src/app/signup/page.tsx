@@ -25,7 +25,7 @@ function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Building className="h-8 w-8 text-primary" />
-      <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
+      <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
     </div>
   );
 }
@@ -102,7 +102,7 @@ export default function SignupPage() {
 
                 toast({
                     title: "Account Created!",
-                    description: "Your Canara Bank account has been successfully created. Please sign in to continue.",
+                    description: "Your VeriSafe account has been successfully created. Please sign in to continue.",
                 });
                 router.push("/signin");
 
@@ -118,13 +118,13 @@ export default function SignupPage() {
     }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0f2851] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
     <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
       <CardHeader className="items-center text-center">
         <Logo className="mb-4" />
         <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
-          Enter your information to create a new Canara Bank account.
+          Enter your information to create a new VeriSafe account.
         </CardDescription>
       </CardHeader>
       <CardContent>

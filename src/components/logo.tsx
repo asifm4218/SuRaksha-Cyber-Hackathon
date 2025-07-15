@@ -5,7 +5,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Building className="h-6 w-6 text-primary" />
-      <span className="text-lg font-semibold tracking-tight">Canara Bank</span>
+      <span className="text-lg font-semibold tracking-tight">VeriSafe</span>
     </div>
   );
 }

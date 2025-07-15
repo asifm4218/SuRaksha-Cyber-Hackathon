@@ -4,7 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Canara Bank - Digital Banking',
+  title: 'VeriSafe - Digital Banking',
   description: 'Experience seamless banking with our advanced digital solutions.',
 };
 

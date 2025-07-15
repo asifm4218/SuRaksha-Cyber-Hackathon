@@ -51,7 +51,7 @@ function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Building className="h-6 w-6 text-primary" />
-      <span className="text-lg font-semibold tracking-tight">Canara Bank</span>
+      <span className="text-lg font-semibold tracking-tight">VeriSafe</span>
     </div>
   );
 }
@@ -230,7 +230,7 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-[#0f2851] pb-24 md:pb-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
           {children}
         </main>
         {isMobile && <MobileNav navItems={navItems} />}
@@ -242,15 +242,15 @@ export default function DashboardLayout({
             <DialogHeader>
                 <div className="flex flex-col items-center text-center">
                     <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-                    <DialogTitle className="text-2xl">Session Timeout</DialogTitle>
+                    <DialogTitle className="text-2xl">Session Terminated for Security</DialogTitle>
                 </div>
                 <DialogDescription className="text-center py-4">
-                    For your security, your session has been ended due to inactivity. Our AI model detected a period of no interaction, which could indicate a security risk.
+                    For your protection, your session has been automatically ended due to a prolonged period of inactivity. This is an adaptive security measure to prevent unauthorized access.
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter>
                 <Button onClick={handleLogout} className="w-full">
-                    Return to Home
+                    Return to Sign In
                 </Button>
             </DialogFooter>
         </DialogContent>
