@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -9,31 +9,71 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUpRight, Receipt } from "lucide-react";
+import { ArrowUpRight, Receipt, LoaderCircle } from "lucide-react";
+
+type PendingAction = {
+    type: 'transfer' | 'bill';
+    data: any;
+} | null;
+
 
 export function QuickActions() {
     const { toast } = useToast();
     const [isTransferOpen, setIsTransferOpen] = useState(false);
     const [isPayBillOpen, setIsPayBillOpen] = useState(false);
+    const [isMpinDialogOpen, setIsMpinDialogOpen] = useState(false);
+    const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+    const [mpin, setMpin] = useState("");
+    const [isVerifyingMpin, setIsVerifyingMpin] = useState(false);
 
-    const handleTransfer = (e: React.FormEvent) => {
+    const transferFormRef = useRef<HTMLFormElement>(null);
+    const billPayFormRef = useRef<HTMLFormElement>(null);
+
+    const handleInitiateAction = (e: React.FormEvent, type: 'transfer' | 'bill') => {
         e.preventDefault();
-        // In a real app, you'd handle form data and API calls here.
-        toast({
-            title: "Transfer Successful",
-            description: "The funds have been sent successfully.",
-        });
+        const formData = new FormData(type === 'transfer' ? transferFormRef.current! : billPayFormRef.current!);
+        const data = Object.fromEntries(formData.entries());
+        
+        setPendingAction({ type, data });
         setIsTransferOpen(false);
+        setIsPayBillOpen(false);
+        setIsMpinDialogOpen(true);
     };
 
-    const handlePayBill = (e: React.FormEvent) => {
-        e.preventDefault();
-        toast({
-            title: "Bill Paid",
-            description: "The bill has been paid successfully.",
-        });
-        setIsPayBillOpen(false);
+    const handleMpinVerification = () => {
+        setIsVerifyingMpin(true);
+
+        // Simulate network delay
+        setTimeout(() => {
+            if (mpin === "180805") {
+                if (pendingAction?.type === 'transfer') {
+                    toast({
+                        title: "Transfer Successful",
+                        description: `Sent ₹${pendingAction.data.amount} to ${pendingAction.data.recipient}.`,
+                    });
+                } else if (pendingAction?.type === 'bill') {
+                    toast({
+                        title: "Bill Paid",
+                        description: `Paid ₹${pendingAction.data['bill-amount']} for ${pendingAction.data.biller}.`,
+                    });
+                }
+                // Here you would typically add the transaction to a list
+                // For now, we just show the toast.
+            } else {
+                toast({
+                    title: "Incorrect MPIN",
+                    description: "The MPIN you entered is incorrect. Please try again.",
+                    variant: "destructive",
+                });
+            }
+            
+            setIsVerifyingMpin(false);
+            setIsMpinDialogOpen(false);
+            setMpin("");
+            setPendingAction(null);
+        }, 1000);
     };
+
 
     return (
         <>
@@ -59,23 +99,23 @@ export function QuickActions() {
                                         Send money to another account. Please double-check the details before sending.
                                     </DialogDescription>
                                 </DialogHeader>
-                                <form onSubmit={handleTransfer}>
+                                <form ref={transferFormRef} onSubmit={(e) => handleInitiateAction(e, 'transfer')}>
                                     <div className="grid gap-4 py-4">
                                         <div className="grid gap-2">
                                             <Label htmlFor="recipient">Recipient Account</Label>
-                                            <Input id="recipient" placeholder="Enter account number or UPI ID" required />
+                                            <Input id="recipient" name="recipient" placeholder="Enter account number or UPI ID" required />
                                         </div>
                                         <div className="grid gap-2">
                                             <Label htmlFor="amount">Amount (₹)</Label>
-                                            <Input id="amount" type="number" placeholder="0.00" required />
+                                            <Input id="amount" name="amount" type="number" placeholder="0.00" required />
                                         </div>
                                         <div className="grid gap-2">
                                             <Label htmlFor="remarks">Remarks (Optional)</Label>
-                                            <Input id="remarks" placeholder="e.g., Dinner last night" />
+                                            <Input id="remarks" name="remarks" placeholder="e.g., Dinner last night" />
                                         </div>
                                     </div>
                                     <DialogFooter>
-                                        <Button type="submit">Confirm Transfer</Button>
+                                        <Button type="submit">Proceed to Pay</Button>
                                     </DialogFooter>
                                 </form>
                             </DialogContent>
@@ -94,11 +134,11 @@ export function QuickActions() {
                                         Select a biller and enter the amount to pay.
                                     </DialogDescription>
                                 </DialogHeader>
-                                <form onSubmit={handlePayBill}>
+                                <form ref={billPayFormRef} onSubmit={(e) => handleInitiateAction(e, 'bill')}>
                                      <div className="grid gap-4 py-4">
                                         <div className="grid gap-2">
                                             <Label htmlFor="biller">Select Biller</Label>
-                                             <Select required>
+                                             <Select name="biller" required>
                                                 <SelectTrigger id="biller">
                                                     <SelectValue placeholder="Choose a biller" />
                                                 </SelectTrigger>
@@ -113,11 +153,11 @@ export function QuickActions() {
                                         </div>
                                         <div className="grid gap-2">
                                             <Label htmlFor="bill-amount">Amount (₹)</Label>
-                                            <Input id="bill-amount" type="number" placeholder="0.00" required />
+                                            <Input id="bill-amount" name="bill-amount" type="number" placeholder="0.00" required />
                                         </div>
                                     </div>
                                     <DialogFooter>
-                                        <Button type="submit">Confirm Payment</Button>
+                                        <Button type="submit">Proceed to Pay</Button>
                                     </DialogFooter>
                                 </form>
                             </DialogContent>
@@ -125,6 +165,38 @@ export function QuickActions() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={isMpinDialogOpen} onOpenChange={(open) => { if (!open) setMpin(""); setIsMpinDialogOpen(open); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Enter MPIN to Authorize</DialogTitle>
+                        <DialogDescription>
+                            For your security, please enter your 6-digit MPIN to complete this transaction.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="mpin">MPIN</Label>
+                        <Input 
+                            id="mpin"
+                            type="password"
+                            maxLength={6}
+                            value={mpin}
+                            onChange={(e) => setMpin(e.target.value)}
+                            placeholder="******"
+                            className="text-center tracking-[0.5em]"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            onClick={handleMpinVerification} 
+                            disabled={mpin.length !== 6 || isVerifyingMpin}
+                        >
+                            {isVerifyingMpin && <LoaderCircle className="animate-spin mr-2" />}
+                            Confirm Transaction
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
