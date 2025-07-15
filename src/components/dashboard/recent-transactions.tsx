@@ -38,7 +38,11 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ initialTransactions }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState(initialTransactions);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
       setTransactions(initialTransactions);
@@ -74,7 +78,7 @@ export function RecentTransactions({ initialTransactions }: RecentTransactionsPr
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {!isClient ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell>

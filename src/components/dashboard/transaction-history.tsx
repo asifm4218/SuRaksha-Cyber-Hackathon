@@ -31,6 +31,7 @@ import {
 import { Input } from "../ui/input"
 import type { Transaction } from "@/lib/mock-data"
 import { format } from 'date-fns'
+import { Skeleton } from "../ui/skeleton"
 
 interface TransactionHistoryProps {
     initialTransactions: Transaction[];
@@ -41,7 +42,12 @@ export function TransactionHistory({ initialTransactions }: TransactionHistoryPr
     const [activeTab, setActiveTab] = React.useState('all');
     const [currentPage, setCurrentPage] = React.useState(1);
     const [searchTerm, setSearchTerm] = React.useState("");
+    const [isClient, setIsClient] = React.useState(false);
     const transactionsPerPage = 10;
+    
+    React.useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     React.useEffect(() => {
         let transactions = initialTransactions;
@@ -107,13 +113,13 @@ export function TransactionHistory({ initialTransactions }: TransactionHistoryPr
                 />
             </div>
             <TabsContent value="all">
-                <TransactionTable transactions={paginatedTransactions} />
+                <TransactionTable transactions={paginatedTransactions} isClient={isClient} />
             </TabsContent>
             <TabsContent value="sent">
-                <TransactionTable transactions={paginatedTransactions} />
+                <TransactionTable transactions={paginatedTransactions} isClient={isClient} />
             </TabsContent>
             <TabsContent value="received">
-                 <TransactionTable transactions={paginatedTransactions} />
+                 <TransactionTable transactions={paginatedTransactions} isClient={isClient} />
             </TabsContent>
             <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-muted-foreground">
@@ -142,7 +148,23 @@ export function TransactionHistory({ initialTransactions }: TransactionHistoryPr
     )
 }
 
-function TransactionTable({ transactions }: { transactions: Transaction[] }) {
+function TransactionTable({ transactions, isClient }: { transactions: Transaction[], isClient: boolean }) {
+  if (!isClient) {
+    return (
+      <div className="space-y-2 mt-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-2 rounded-md border">
+                <div className="space-y-1">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-5 w-20" />
+            </div>
+        ))}
+      </div>
+    )
+  }
+
   if (transactions.length === 0) {
     return (
         <div className="flex items-center justify-center h-48 border rounded-md">
