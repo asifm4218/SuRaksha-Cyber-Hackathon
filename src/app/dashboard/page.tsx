@@ -18,6 +18,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadTransactions() {
+      setIsLoading(true);
       const initialTransactions = await getTransactions();
       setTransactions(initialTransactions);
       setIsLoading(false);
@@ -26,7 +27,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleTransactionAdded = (newTransaction: Transaction) => {
-    setTransactions(prev => [newTransaction, ...prev]);
+    setTransactions(prev => [newTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     if (newTransaction.type === 'Debit') {
         setBalance(prev => prev - newTransaction.amount);
     }
@@ -37,11 +38,11 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl text-foreground">Welcome Back!</h1>
       </div>
-       <div className="grid gap-4 md:gap-8 lg:grid-cols-3 xl:grid-cols-3 lg:[grid-template-areas:'summary_summary_security''transactions_transactions_monitor']">
+       <div className="grid gap-4 md:gap-8 lg:grid-cols-3 xl:grid-cols-3 lg:[grid-template-areas:'summary_actions_security''transactions_transactions_monitor']">
         <div className="lg:[grid-area:summary]">
              {isLoading ? <Skeleton className="h-36 w-full" /> : <AccountSummary balance={balance} />}
         </div>
-        <div className="lg:[grid-area:summary]">
+        <div className="lg:[grid-area:actions]">
              {isLoading ? <Skeleton className="h-36 w-full" /> : <QuickActions onTransactionAdded={handleTransactionAdded} currentBalance={balance} />}
         </div>
         <div className="lg:[grid-area:transactions] lg:col-span-2">
