@@ -21,9 +21,10 @@ type PendingAction = {
 
 interface QuickActionsProps {
     onTransactionAdded: (newTransaction: Transaction) => void;
+    currentBalance: number;
 }
 
-export function QuickActions({ onTransactionAdded }: QuickActionsProps) {
+export function QuickActions({ onTransactionAdded, currentBalance }: QuickActionsProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -56,6 +57,16 @@ export function QuickActions({ onTransactionAdded }: QuickActionsProps) {
         e.preventDefault();
         const formData = new FormData(type === 'transfer' ? transferFormRef.current! : billPayFormRef.current!);
         const data = Object.fromEntries(formData.entries());
+
+        const amount = parseFloat((type === 'transfer' ? data.amount : data['bill-amount']) as string);
+        if (amount > currentBalance) {
+            toast({
+                title: "Insufficient Funds",
+                description: `Your balance is too low to complete this transaction.`,
+                variant: "destructive",
+            });
+            return;
+        }
         
         setPendingAction({ type, data });
         setIsTransferOpen(false);
@@ -118,7 +129,7 @@ export function QuickActions({ onTransactionAdded }: QuickActionsProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-4">
                         <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
                             <DialogTrigger asChild>
                                 <Button>

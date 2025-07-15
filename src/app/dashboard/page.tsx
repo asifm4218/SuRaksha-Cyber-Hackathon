@@ -1,13 +1,36 @@
 
+"use client";
+
+import { useState, useEffect } from "react";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { AccountSummary } from "@/components/dashboard/account-summary";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { SecurityOverview } from "@/components/dashboard/security-overview";
 import { BehaviorMonitor } from "@/components/dashboard/behavior-monitor";
 import { getTransactions } from "@/app/actions";
+import type { Transaction } from "@/lib/mock-data";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function DashboardPage() {
-  const initialTransactions = await getTransactions();
+export default function DashboardPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [balance, setBalance] = useState(125430.50);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTransactions() {
+      const initialTransactions = await getTransactions();
+      setTransactions(initialTransactions);
+      setIsLoading(false);
+    }
+    loadTransactions();
+  }, []);
+
+  const handleTransactionAdded = (newTransaction: Transaction) => {
+    setTransactions(prev => [newTransaction, ...prev]);
+    if (newTransaction.type === 'Debit') {
+        setBalance(prev => prev - newTransaction.amount);
+    }
+  };
 
   return (
     <>
@@ -16,13 +39,13 @@ export default async function DashboardPage() {
       </div>
        <div className="grid gap-4 md:gap-8 lg:grid-cols-3 xl:grid-cols-3 lg:[grid-template-areas:'summary_summary_security''transactions_transactions_monitor']">
         <div className="lg:[grid-area:summary]">
-            <AccountSummary />
+             {isLoading ? <Skeleton className="h-36 w-full" /> : <AccountSummary balance={balance} />}
         </div>
         <div className="lg:[grid-area:summary]">
-            <QuickActions />
+             {isLoading ? <Skeleton className="h-36 w-full" /> : <QuickActions onTransactionAdded={handleTransactionAdded} currentBalance={balance} />}
         </div>
         <div className="lg:[grid-area:transactions] lg:col-span-2">
-           <RecentTransactions initialTransactions={initialTransactions} />
+           <RecentTransactions initialTransactions={transactions} isClient={!isLoading} />
         </div>
         <div className="lg:[grid-area:security]">
             <SecurityOverview />

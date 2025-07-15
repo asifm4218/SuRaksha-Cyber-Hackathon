@@ -34,18 +34,14 @@ import Link from "next/link";
 
 interface RecentTransactionsProps {
   initialTransactions: Transaction[];
+  isClient: boolean;
 }
 
-export function RecentTransactions({ initialTransactions }: RecentTransactionsProps) {
+export function RecentTransactions({ initialTransactions, isClient }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState(initialTransactions);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-      setTransactions(initialTransactions);
+      setTransactions(initialTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   }, [initialTransactions]);
 
   const recentTransactions = transactions.slice(0, 5);

@@ -1,7 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function AccountSummary() {
+interface AccountSummaryProps {
+    balance: number;
+}
+
+export function AccountSummary({ balance }: AccountSummaryProps) {
     return (
         <Card className="sm:col-span-2 shadow-sm">
             <CardHeader className="pb-3">
@@ -14,7 +18,7 @@ export function AccountSummary() {
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                     <span className="text-sm text-muted-foreground">Primary Account</span>
-                    <span className="text-2xl font-bold">₹1,25,430.50</span>
+                    <span className="text-2xl font-bold">₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex flex-col text-right">
                     <span className="text-sm text-muted-foreground">Savings</span>
