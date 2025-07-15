@@ -22,7 +22,7 @@ export default function LandingPage() {
     <div className="bg-background text-foreground min-h-screen flex flex-col">
       <header className="w-full">
         {/* Top bar */}
-        <div className="bg-[#E8EAF6] dark:bg-slate-800/50 text-gray-800 dark:text-gray-300 text-xs border-b border-gray-300 dark:border-slate-700">
+        <div className="bg-muted/50 text-muted-foreground text-xs border-b">
           <div className="container mx-auto px-4 py-2 flex justify-between items-center">
             <div className="flex items-center gap-4">
                 <a href="#" className="flex items-center gap-1.5 hover:text-primary">
@@ -53,16 +53,16 @@ export default function LandingPage() {
                 <div className="flex items-center gap-3">
                     <Building className="w-10 h-10 text-primary" />
                     <div>
-                        <h1 className="text-2xl font-bold">VeriSafe</h1>
+                        <h1 className="text-2xl font-bold text-foreground">VeriSafe</h1>
                         <p className="text-xs text-muted-foreground">Secure Banking, Simplified</p>
                     </div>
                 </div>
 
                 <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-                    <a href="#" className="flex items-center gap-1 hover:text-primary">Personal</a>
-                    <a href="#" className="flex items-center gap-1 hover:text-primary">Business</a>
-                    <a href="#" className="flex items-center gap-1 hover:text-primary">Security</a>
-                    <a href="#" className="flex items-center gap-1 hover:text-primary">About Us</a>
+                    <a href="#" className="text-foreground hover:text-primary">Personal</a>
+                    <a href="#" className="text-foreground hover:text-primary">Business</a>
+                    <a href="#" className="text-foreground hover:text-primary">Security</a>
+                    <a href="#" className="text-foreground hover:text-primary">About Us</a>
                 </nav>
 
                 <div className="flex items-center gap-2">
@@ -80,17 +80,18 @@ export default function LandingPage() {
       
       {/* Hero Section */}
       <main className="flex-grow">
-        <div className="relative bg-cover bg-center text-foreground" style={{ backgroundImage: "url('https://placehold.co/1920x1080/E8EAF6/3F51B5.png?text=.')", backgroundBlendMode: 'overlay', backgroundColor: 'rgba(232, 234, 246, 0.1)' }} data-ai-hint="modern office security">
-           <div className="container mx-auto px-4 py-32 flex flex-col justify-center items-start">
-              <h2 className="text-6xl font-extrabold max-w-2xl leading-tight text-gray-800 dark:text-gray-100">Smarter, Safer Banking.</h2>
-              <p className="text-lg mt-4 max-w-xl text-gray-600 dark:text-gray-300">
+        <div className="relative bg-cover bg-center text-foreground" style={{ backgroundImage: "url('https://placehold.co/1920x1080/E8EAF6/3F51B5.png?text=.')" }} data-ai-hint="modern office security">
+           <div className="absolute inset-0 bg-background/80 dark:bg-background/90" />
+           <div className="relative container mx-auto px-4 py-32 flex flex-col justify-center items-start">
+              <h2 className="text-6xl font-extrabold max-w-2xl leading-tight text-foreground">Smarter, Safer Banking.</h2>
+              <p className="text-lg mt-4 max-w-xl text-muted-foreground">
                 VeriSafe uses advanced behavioral AI to continuously protect your account, ensuring only you have access.
               </p>
               <div className="mt-8 flex gap-4">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base" onClick={handleApplyNowClick}>
                   Open a Secure Account <Milestone className="ml-2 h-5 w-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 font-bold text-base">
+                <Button size="lg" variant="outline" className="font-bold text-base">
                   <PlayCircle className="mr-2 h-5 w-5" /> How It Works
                 </Button>
               </div>
