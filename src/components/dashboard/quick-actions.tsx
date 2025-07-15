@@ -12,13 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUpRight, Receipt, LoaderCircle } from "lucide-react";
 import { addTransaction } from "@/app/actions";
+import type { Transaction } from "@/lib/mock-data";
 
 type PendingAction = {
     type: 'transfer' | 'bill';
     data: any;
 } | null;
 
-export function QuickActions() {
+interface QuickActionsProps {
+    onTransactionAdded: (newTransaction: Transaction) => void;
+}
+
+export function QuickActions({ onTransactionAdded }: QuickActionsProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -31,7 +36,7 @@ export function QuickActions() {
     const transferFormRef = useRef<HTMLFormElement>(null);
     const billPayFormRef = useRef<HTMLFormElement>(null);
 
-    const handleTransactionSuccess = (type: 'transfer' | 'bill', data: any) => {
+    const handleTransactionSuccess = (type: 'transfer' | 'bill', data: any, newTransaction: Transaction) => {
         if (type === 'transfer') {
              toast({
                 title: "Transfer Successful",
@@ -43,8 +48,7 @@ export function QuickActions() {
                 description: `Paid ₹${data['bill-amount']} for ${data.biller}.`,
             });
         }
-        // Refresh the page to show the new transaction
-        router.refresh();
+        onTransactionAdded(newTransaction);
     };
 
 
@@ -73,8 +77,8 @@ export function QuickActions() {
                     amount: amount,
                     type: 'Debit',
                 });
-                if (result.success) {
-                    handleTransactionSuccess('transfer', pendingAction.data);
+                if (result.success && result.newTransaction) {
+                    handleTransactionSuccess('transfer', pendingAction.data, result.newTransaction);
                 }
             } else if (pendingAction?.type === 'bill') {
                 const amount = parseFloat(pendingAction.data['bill-amount'] as string);
@@ -83,8 +87,8 @@ export function QuickActions() {
                     amount: amount,
                     type: 'Debit',
                 });
-                if (result.success) {
-                    handleTransactionSuccess('bill', pendingAction.data);
+                if (result.success && result.newTransaction) {
+                    handleTransactionSuccess('bill', pendingAction.data, result.newTransaction);
                 }
             }
         } else {
