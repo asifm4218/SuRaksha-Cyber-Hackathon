@@ -147,7 +147,7 @@ export function QuickActions({ onTransaction }: QuickActionsProps) {
                                     <DialogDescription>
                                         Select a biller and enter the amount to pay.
                                     </DialogDescription>
-                                </Header>
+                                </DialogHeader>
                                 <form ref={billPayFormRef} onSubmit={(e) => handleInitiateAction(e, 'bill')}>
                                      <div className="grid gap-4 py-4">
                                         <div className="grid gap-2">
