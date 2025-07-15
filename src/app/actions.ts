@@ -7,7 +7,9 @@ import { verifyBiometrics } from "@/ai/flows/verify-biometrics-flow";
 import { sendEmailNotification } from "@/ai/flows/send-email-notification-flow";
 import type { SendEmailNotificationInput } from "@/ai/flows/send-email-notification-flow";
 import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential, storeTwoFactorCode, getTwoFactorCode } from "@/services/user-service";
+import { readTransactions, writeTransactions } from "@/services/transaction-service";
 import { randomBytes } from 'crypto';
+import type { Transaction } from "@/lib/mock-data";
 
 // Helper to convert string to Base64URL
 function toBase64Url(str: string | Buffer) {
@@ -193,37 +195,37 @@ export async function handleLogin(credentials: UserCredentials): Promise<{ succe
     return { success: true, message: "Login successful!", user };
 }
 
-export async function sendTwoFactorCode(email: string): Promise<{ success: boolean }> {
-    const code = Math.floor(1000 + Math.random() * 9000).toString(); // Generate 4-digit code
-    await storeTwoFactorCode(email, code);
+// === Transaction Actions ===
 
-    await sendNotificationEmail({
-        to: email,
-        subject: "Your VeriSafe Verification Code",
-        body: `<h1>Verification Required</h1><p>Your two-factor authentication code is: <strong>${code}</strong></p><p>This code will expire in 10 minutes.</p>`
-    });
-    
-    return { success: true };
+export async function getTransactions(): Promise<Transaction[]> {
+    const transactions = await readTransactions();
+    // Return transactions sorted by date, most recent first
+    return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-export async function verifyTwoFactorCode(email: string, code: string): Promise<{ success: boolean, message: string }> {
-    const storedCode = await getTwoFactorCode(email);
-    
-    if (!storedCode || storedCode !== code) {
-        return { success: false, message: "Invalid verification code. Please try again." };
+export async function addTransaction(
+    newTransactionData: Omit<Transaction, 'id' | 'date' | 'status'>
+): Promise<{ success: boolean; newTransaction?: Transaction }> {
+    try {
+        const transactions = await readTransactions();
+        
+        const newTransaction: Transaction = {
+            id: `txn_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            date: new Date().toISOString(),
+            status: 'Completed',
+            ...newTransactionData,
+        };
+
+        transactions.unshift(newTransaction); // Add to the beginning of the list
+        await writeTransactions(transactions);
+
+        return { success: true, newTransaction };
+    } catch (error) {
+        console.error("Failed to add transaction:", error);
+        return { success: false };
     }
-
-    // Code is correct, clear it so it can't be reused
-    await storeTwoFactorCode(email, null); 
-
-    await sendNotificationEmail({
-        to: email,
-        subject: "Successful Sign-In",
-        body: "<h1>Security Alert</h1><p>We detected a new sign-in to your VeriSafe account. If this was not you, please secure your account immediately.</p>"
-    });
-
-    return { success: true, message: "Login successful!" };
 }
+
 
 // === Other Actions ===
 

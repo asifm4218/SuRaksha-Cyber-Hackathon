@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tabs"
 import { Input } from "../ui/input"
 import type { Transaction } from "@/lib/mock-data"
+import { format } from 'date-fns'
 
 interface TransactionHistoryProps {
     transactions: Transaction[];
@@ -37,12 +38,27 @@ interface TransactionHistoryProps {
 
 export function TransactionHistory({ transactions: allTransactions }: TransactionHistoryProps) {
     const [filteredTransactions, setFilteredTransactions] = React.useState(allTransactions);
+    const [activeTab, setActiveTab] = React.useState('all');
     const [currentPage, setCurrentPage] = React.useState(1);
+    const [searchTerm, setSearchTerm] = React.useState("");
     const transactionsPerPage = 10;
 
     React.useEffect(() => {
-        setFilteredTransactions(allTransactions);
-    }, [allTransactions]);
+        let transactions = allTransactions;
+
+        if (activeTab === 'sent') {
+            transactions = allTransactions.filter(t => t.type === 'Debit');
+        } else if (activeTab === 'received') {
+            transactions = allTransactions.filter(t => t.type === 'Credit');
+        }
+
+        if (searchTerm) {
+            transactions = transactions.filter(t => t.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+
+        setFilteredTransactions(transactions);
+        setCurrentPage(1); // Reset to first page on filter change
+    }, [allTransactions, activeTab, searchTerm]);
 
     const handlePageChange = (direction: 'next' | 'prev') => {
         if (direction === 'next' && currentPage < Math.ceil(filteredTransactions.length / transactionsPerPage)) {
@@ -54,14 +70,15 @@ export function TransactionHistory({ transactions: allTransactions }: Transactio
 
     const startIndex = (currentPage - 1) * transactionsPerPage;
     const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + transactionsPerPage);
+    const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
 
     return (
-        <Tabs defaultValue="all">
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
             <div className="flex items-center">
                 <TabsList>
-                    <TabsTrigger value="all" onClick={() => setFilteredTransactions(allTransactions)}>All</TabsTrigger>
-                    <TabsTrigger value="sent" onClick={() => setFilteredTransactions(allTransactions.filter(t => t.type === 'Debit'))}>Sent</TabsTrigger>
-                    <TabsTrigger value="received" onClick={() => setFilteredTransactions(allTransactions.filter(t => t.type === 'Credit'))}>Received</TabsTrigger>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="sent">Sent</TabsTrigger>
+                    <TabsTrigger value="received">Received</TabsTrigger>
                 </TabsList>
                 <div className="ml-auto flex items-center gap-2">
                     <DropdownMenu>
@@ -82,7 +99,12 @@ export function TransactionHistory({ transactions: allTransactions }: Transactio
                 </div>
             </div>
             <div className="mt-4">
-                <Input placeholder="Search by description..." className="max-w-sm" />
+                <Input 
+                    placeholder="Search by description..." 
+                    className="max-w-sm" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
             <TabsContent value="all">
                 <TransactionTable transactions={paginatedTransactions} />
@@ -95,7 +117,7 @@ export function TransactionHistory({ transactions: allTransactions }: Transactio
             </TabsContent>
             <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-muted-foreground">
-                    Showing {startIndex + 1} to {Math.min(startIndex + transactionsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions.
+                    Page {currentPage} of {totalPages > 0 ? totalPages : 1}
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -110,7 +132,7 @@ export function TransactionHistory({ transactions: allTransactions }: Transactio
                         variant="outline"
                         size="sm"
                         onClick={() => handlePageChange('next')}
-                        disabled={currentPage >= Math.ceil(filteredTransactions.length / transactionsPerPage)}
+                        disabled={currentPage >= totalPages}
                     >
                         Next
                     </Button>
@@ -121,6 +143,13 @@ export function TransactionHistory({ transactions: allTransactions }: Transactio
 }
 
 function TransactionTable({ transactions }: { transactions: Transaction[] }) {
+  if (transactions.length === 0) {
+    return (
+        <div className="flex items-center justify-center h-48 border rounded-md">
+            <p className="text-muted-foreground">No transactions found.</p>
+        </div>
+    )
+  }
   return (
     <Table>
       <TableHeader>
@@ -138,9 +167,12 @@ function TransactionTable({ transactions }: { transactions: Transaction[] }) {
       <TableBody>
         {transactions.map(tx => (
           <TableRow key={tx.id}>
-             <TableCell className="hidden sm:table-cell">{tx.date}</TableCell>
+             <TableCell className="hidden sm:table-cell">{format(new Date(tx.date), 'PP')}</TableCell>
             <TableCell>
               <div className="font-medium">{tx.description}</div>
+               <div className="text-sm text-muted-foreground sm:hidden">
+                    {format(new Date(tx.date), 'PP')}
+                </div>
             </TableCell>
             <TableCell className="hidden sm:table-cell">{tx.type}</TableCell>
             <TableCell className="hidden sm:table-cell">

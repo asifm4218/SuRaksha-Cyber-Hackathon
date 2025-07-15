@@ -1,13 +1,10 @@
 
-"use client";
-
-import { useState } from 'react';
+import { getTransactions } from "@/app/actions";
 import { TransactionHistory } from "@/components/dashboard/transaction-history";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { transactions as initialTransactions, type Transaction } from "@/lib/mock-data";
 
-export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+export default async function TransactionsPage() {
+  const transactions = await getTransactions();
 
   return (
     <div className="flex-1 space-y-4">

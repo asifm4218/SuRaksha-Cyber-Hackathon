@@ -47,7 +47,6 @@ export function QuickActions({ onTransaction }: QuickActionsProps) {
     const handleMpinVerification = () => {
         setIsVerifyingMpin(true);
 
-        // Simulate network delay
         setTimeout(() => {
             if (mpin === "180805") {
                 if (pendingAction?.type === 'transfer') {
@@ -57,20 +56,12 @@ export function QuickActions({ onTransaction }: QuickActionsProps) {
                         amount: amount,
                         type: 'Debit',
                     });
-                    toast({
-                        title: "Transfer Successful",
-                        description: `Sent ₹${amount.toFixed(2)} to ${pendingAction.data.recipient}.`,
-                    });
                 } else if (pendingAction?.type === 'bill') {
                     const amount = parseFloat(pendingAction.data['bill-amount']);
                     onTransaction({
                         description: `Bill payment - ${pendingAction.data.biller}`,
                         amount: amount,
                         type: 'Debit',
-                    });
-                    toast({
-                        title: "Bill Paid",
-                        description: `Paid ₹${amount.toFixed(2)} for ${pendingAction.data.biller}.`,
                     });
                 }
             } else {
@@ -85,6 +76,8 @@ export function QuickActions({ onTransaction }: QuickActionsProps) {
             setIsMpinDialogOpen(false);
             setMpin("");
             setPendingAction(null);
+            if (transferFormRef.current) transferFormRef.current.reset();
+            if (billPayFormRef.current) billPayFormRef.current.reset();
         }, 1000);
     };
 
