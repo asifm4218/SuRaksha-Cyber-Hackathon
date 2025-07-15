@@ -45,6 +45,7 @@ import {
 import { useIdle } from "@/hooks/use-idle";
 import { handleSessionTimeout } from "@/app/actions";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 
 function Logo({ className }: { className?: string }) {
@@ -206,6 +207,7 @@ export default function DashboardLayout({
           <div className="w-full flex-1 hidden md:block">
             {/* Can add search bar here */}
           </div>
+          <ThemeToggle />
           <Button variant="outline" size="icon" className="h-8 w-8">
               <Bell className="h-4 w-4" />
               <span className="sr-only">Toggle notifications</span>

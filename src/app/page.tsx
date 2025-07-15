@@ -5,6 +5,7 @@ import { Banknote, BookOpen, Building, ChevronDown, Clock, Globe, LandPlot, Mail
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LandingPage() {
     const router = useRouter();
@@ -21,7 +22,7 @@ export default function LandingPage() {
     <div className="bg-background text-foreground min-h-screen flex flex-col">
       <header className="w-full">
         {/* Top bar */}
-        <div className="bg-[#E8EAF6] text-gray-800 text-xs border-b border-gray-300">
+        <div className="bg-[#E8EAF6] dark:bg-slate-800/50 text-gray-800 dark:text-gray-300 text-xs border-b border-gray-300 dark:border-slate-700">
           <div className="container mx-auto px-4 py-2 flex justify-between items-center">
             <div className="flex items-center gap-4">
                 <a href="#" className="flex items-center gap-1.5 hover:text-primary">
@@ -47,7 +48,7 @@ export default function LandingPage() {
         </div>
 
         {/* Main Header */}
-        <div className="bg-background text-foreground sticky top-0 z-50 shadow-md">
+        <div className="bg-background/80 backdrop-blur-sm text-foreground sticky top-0 z-50 shadow-md">
             <div className="container mx-auto px-4 flex justify-between items-center h-20">
                 <div className="flex items-center gap-3">
                     <Building className="w-10 h-10 text-primary" />
@@ -65,6 +66,7 @@ export default function LandingPage() {
                 </nav>
 
                 <div className="flex items-center gap-2">
+                    <ThemeToggle />
                     <Button variant="outline" onClick={handleLoginClick}>
                         <User className="mr-2 h-4 w-4" /> Sign In
                     </Button>
@@ -80,8 +82,8 @@ export default function LandingPage() {
       <main className="flex-grow">
         <div className="relative bg-cover bg-center text-foreground" style={{ backgroundImage: "url('https://placehold.co/1920x1080/E8EAF6/3F51B5.png?text=.')", backgroundBlendMode: 'overlay', backgroundColor: 'rgba(232, 234, 246, 0.1)' }} data-ai-hint="modern office security">
            <div className="container mx-auto px-4 py-32 flex flex-col justify-center items-start">
-              <h2 className="text-6xl font-extrabold max-w-2xl leading-tight text-gray-800">Smarter, Safer Banking.</h2>
-              <p className="text-lg mt-4 max-w-xl text-gray-600">
+              <h2 className="text-6xl font-extrabold max-w-2xl leading-tight text-gray-800 dark:text-gray-100">Smarter, Safer Banking.</h2>
+              <p className="text-lg mt-4 max-w-xl text-gray-600 dark:text-gray-300">
                 VeriSafe uses advanced behavioral AI to continuously protect your account, ensuring only you have access.
               </p>
               <div className="mt-8 flex gap-4">
