@@ -24,16 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Transaction } from "@/lib/mock-data";
 
-const transactions = [
-    { name: "Reliance Digital", email: "payment@reliancedigital.in", amount: "- ₹4,999.00", status: "Success" },
-    { name: "Swiggy", email: "order@swiggy.in", amount: "- ₹350.00", status: "Success" },
-    { name: "Salary Credit", email: "payroll@company.com", amount: "+ ₹85,000.00", status: "Success" },
-    { name: "Jio Mobile Recharge", email: "recharge@jio.com", amount: "- ₹749.00", status: "Success" },
-    { name: "ATM Withdrawal", email: "atm-txn@canara.in", amount: "- ₹10,000.00", status: "Pending" },
-]
+interface RecentTransactionsProps {
+  transactions: Transaction[];
+}
 
-export function RecentTransactions() {
+export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+  const recentTransactions = transactions.slice(0, 5);
+
   return (
     <Card className="xl:col-span-2 shadow-sm">
       <CardHeader className="flex flex-row items-center">
@@ -44,7 +43,7 @@ export function RecentTransactions() {
           </CardDescription>
         </div>
         <Button asChild size="sm" className="ml-auto gap-1">
-          <a href="#">
+          <a href="/dashboard/transactions">
             View All
           </a>
         </Button>
@@ -62,20 +61,22 @@ export function RecentTransactions() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map(tx => (
-                <TableRow key={tx.name}>
+            {recentTransactions.map(tx => (
+                <TableRow key={tx.id}>
                 <TableCell>
-                  <div className="font-medium">{tx.name}</div>
+                  <div className="font-medium">{tx.description}</div>
                   <div className="hidden text-sm text-muted-foreground md:inline">
-                    {tx.email}
+                    {tx.date}
                   </div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
-                  <Badge className="text-xs" variant={tx.status === 'Success' ? 'default' : 'outline'}>
+                  <Badge className="text-xs" variant={tx.status === 'Completed' ? 'default' : 'outline'}>
                     {tx.status}
                   </Badge>
                 </TableCell>
-                <TableCell className={`text-right ${tx.amount.startsWith('+') ? 'text-green-600' : ''}`}>{tx.amount}</TableCell>
+                <TableCell className={`text-right font-semibold ${tx.type === 'Credit' ? 'text-green-600' : ''}`}>
+                   {tx.type === 'Credit' ? `+ ₹${tx.amount.toFixed(2)}` : `- ₹${tx.amount.toFixed(2)}`}
+                </TableCell>
                  <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

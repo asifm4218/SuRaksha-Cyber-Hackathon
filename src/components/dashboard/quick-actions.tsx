@@ -10,14 +10,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUpRight, Receipt, LoaderCircle } from "lucide-react";
+import type { Transaction } from "@/lib/mock-data";
 
 type PendingAction = {
     type: 'transfer' | 'bill';
     data: any;
 } | null;
 
+interface QuickActionsProps {
+    onTransaction: (transaction: Omit<Transaction, 'id' | 'date' | 'status'>) => void;
+}
 
-export function QuickActions() {
+export function QuickActions({ onTransaction }: QuickActionsProps) {
     const { toast } = useToast();
     const [isTransferOpen, setIsTransferOpen] = useState(false);
     const [isPayBillOpen, setIsPayBillOpen] = useState(false);
@@ -47,18 +51,28 @@ export function QuickActions() {
         setTimeout(() => {
             if (mpin === "180805") {
                 if (pendingAction?.type === 'transfer') {
+                    const amount = parseFloat(pendingAction.data.amount);
+                    onTransaction({
+                        description: `Transfer to ${pendingAction.data.recipient}`,
+                        amount: amount,
+                        type: 'Debit',
+                    });
                     toast({
                         title: "Transfer Successful",
-                        description: `Sent ₹${pendingAction.data.amount} to ${pendingAction.data.recipient}.`,
+                        description: `Sent ₹${amount.toFixed(2)} to ${pendingAction.data.recipient}.`,
                     });
                 } else if (pendingAction?.type === 'bill') {
+                    const amount = parseFloat(pendingAction.data['bill-amount']);
+                    onTransaction({
+                        description: `Bill payment - ${pendingAction.data.biller}`,
+                        amount: amount,
+                        type: 'Debit',
+                    });
                     toast({
                         title: "Bill Paid",
-                        description: `Paid ₹${pendingAction.data['bill-amount']} for ${pendingAction.data.biller}.`,
+                        description: `Paid ₹${amount.toFixed(2)} for ${pendingAction.data.biller}.`,
                     });
                 }
-                // Here you would typically add the transaction to a list
-                // For now, we just show the toast.
             } else {
                 toast({
                     title: "Incorrect MPIN",
@@ -133,7 +147,7 @@ export function QuickActions() {
                                     <DialogDescription>
                                         Select a biller and enter the amount to pay.
                                     </DialogDescription>
-                                </DialogHeader>
+                                </Header>
                                 <form ref={billPayFormRef} onSubmit={(e) => handleInitiateAction(e, 'bill')}>
                                      <div className="grid gap-4 py-4">
                                         <div className="grid gap-2">
@@ -143,11 +157,11 @@ export function QuickActions() {
                                                     <SelectValue placeholder="Choose a biller" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="electricity">Electricity Board</SelectItem>
-                                                    <SelectItem value="water">Water Supply</SelectItem>
-                                                    <SelectItem value="internet">Broadband/Internet</SelectItem>
-                                                    <SelectItem value="gas">Gas Cylinder</SelectItem>
-                                                    <SelectItem value="mobile">Mobile Recharge</SelectItem>
+                                                    <SelectItem value="Electricity Board">Electricity Board</SelectItem>
+                                                    <SelectItem value="Water Supply">Water Supply</SelectItem>
+                                                    <SelectItem value="Broadband/Internet">Broadband/Internet</SelectItem>
+                                                    <SelectItem value="Gas Cylinder">Gas Cylinder</SelectItem>
+                                                    <SelectItem value="Mobile Recharge">Mobile Recharge</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
