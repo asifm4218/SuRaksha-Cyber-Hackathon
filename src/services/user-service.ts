@@ -11,6 +11,8 @@ export interface UserCredentials {
   email: string;
   password?: string;
   fullName?: string;
+  phone?: string;
+  mpin?: string;
 }
 
 const dbPath = path.join(process.cwd(), 'users.json');
@@ -19,7 +21,7 @@ const twoFactorDbPath = path.join(process.cwd(), '2fa_codes.json');
 
 // Pre-populate with a default user for demonstration purposes
 const defaultUsers: UserCredentials[] = [
-  { email: 'analyst@canara.co', password: 'password123', fullName: 'Security Analyst' },
+  { email: 'analyst@canara.co', password: 'password123', fullName: 'Security Analyst', phone: '1234567890', mpin: '180805' },
 ];
 
 async function readData<T>(filePath: string, defaultData: T[] = []): Promise<T[]> {
@@ -103,6 +105,8 @@ export async function createUser(credentials: UserCredentials): Promise<UserCred
     email: credentials.email,
     password: credentials.password, // In a real app, hash and salt this!
     fullName: credentials.fullName,
+    phone: credentials.phone,
+    mpin: credentials.mpin, // In a real app, hash this!
   };
 
   users.push(newUser);

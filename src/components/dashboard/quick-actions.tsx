@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUpRight, Receipt, LoaderCircle } from "lucide-react";
-import { addTransaction } from "@/app/actions";
+import { addTransaction, verifyMpin } from "@/app/actions";
 import type { Transaction } from "@/lib/mock-data";
 
 type PendingAction = {
@@ -25,7 +25,8 @@ interface QuickActionsProps {
 }
 
 export function QuickActions({ onTransactionAdded, currentBalance }: QuickActionsProps) {
-    const router = useRouter();
+    const searchParams = useSearchParams();
+    const email = searchParams.get('email');
     const { toast } = useToast();
     const [isTransferOpen, setIsTransferOpen] = useState(false);
     const [isPayBillOpen, setIsPayBillOpen] = useState(false);
@@ -75,12 +76,15 @@ export function QuickActions({ onTransactionAdded, currentBalance }: QuickAction
     };
 
     const handleMpinVerification = async () => {
+        if (!email) {
+            toast({ title: "Error", description: "User session not found. Please log in again.", variant: "destructive" });
+            return;
+        }
         setIsVerifyingMpin(true);
 
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const isMpinValid = await verifyMpin(email, mpin);
 
-        if (mpin === "180805") {
+        if (isMpinValid) {
             if (pendingAction?.type === 'transfer') {
                 const amount = parseFloat(pendingAction.data.amount as string);
                 const result = await addTransaction({

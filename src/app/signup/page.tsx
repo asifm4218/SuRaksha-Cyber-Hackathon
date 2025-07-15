@@ -46,17 +46,27 @@ export default function SignupPage() {
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
         const fullName = formData.get('fullName') as string;
+        const phone = formData.get('phone') as string;
+        const mpin = formData.get('mpin') as string;
 
-        if (email && password && fullName) {
-            const signupResult = await handleSignupAction({ email, password, fullName });
+        if (email && password && fullName && phone && mpin) {
+            if (mpin.length !== 6 || !/^\d{6}$/.test(mpin)) {
+                toast({
+                    title: "Invalid MPIN",
+                    description: "MPIN must be exactly 6 digits.",
+                    variant: "destructive",
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            const signupResult = await handleSignupAction({ email, password, fullName, phone, mpin });
             if (signupResult.success && signupResult.user) {
                 
-                // If user wants to register biometrics, do it now
                 if (registerBiometrics) {
                     try {
                         const challengeResponse = await getRegistrationChallenge(email, fullName);
                         
-                        // Remap challenge and user.id from Base64URL to ArrayBuffer
                         const publicKeyCredentialCreationOptions = {
                            ...challengeResponse,
                            challenge: base64UrlToUint8Array(challengeResponse.challenge),
@@ -68,7 +78,6 @@ export default function SignupPage() {
                         
                         const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions as any }) as any;
 
-                        // Convert ArrayBuffers to Base64URL for server
                         const credentialForServer = {
                           id: credential.id,
                           rawId: arrayBufferToBase64Url(credential.rawId),
@@ -83,7 +92,7 @@ export default function SignupPage() {
                         if (verificationResult.success) {
                             toast({
                                 title: "Biometrics Registered!",
-                                description: "You can now sign in using your fingerprint.",
+                                description: "You can now sign in using your device's security features.",
                             });
                         } else {
                            throw new Error("Biometric verification failed.");
@@ -96,7 +105,6 @@ export default function SignupPage() {
                             description: err.name === 'NotAllowedError' ? 'Registration was cancelled.' : 'Could not register biometrics.',
                             variant: "destructive",
                         });
-                        // Continue to login even if biometrics fail
                     }
                 }
 
@@ -133,6 +141,10 @@ export default function SignupPage() {
             <Label htmlFor="full-name">Full name</Label>
             <Input id="full-name" name="fullName" placeholder="Suresh Kumar" required />
           </div>
+           <div className="grid gap-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" required />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -146,6 +158,10 @@ export default function SignupPage() {
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="mpin">6-Digit MPIN</Label>
+            <Input id="mpin" name="mpin" type="password" inputMode="numeric" maxLength={6} placeholder="******" required />
           </div>
            <div className="flex items-center space-x-2">
               <Checkbox id="biometrics" onCheckedChange={(checked) => setRegisterBiometrics(Boolean(checked))} />

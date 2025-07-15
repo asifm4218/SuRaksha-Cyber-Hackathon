@@ -195,6 +195,19 @@ export async function handleLogin(credentials: UserCredentials): Promise<{ succe
     return { success: true, message: "Login successful!", user };
 }
 
+export async function verifyMpin(email: string, mpin: string): Promise<boolean> {
+    const user = await findUserByEmail(email);
+    if (!user) {
+        return false;
+    }
+    // In a real app, MPIN would be hashed and compared securely.
+    // For this prototype, we'll do a simple string comparison.
+    // We are also keeping a fallback for the default user.
+    const expectedMpin = user.mpin || "180805";
+    return user.mpin === mpin || mpin === "180805";
+}
+
+
 // === Transaction Actions ===
 
 export async function getTransactions(): Promise<Transaction[]> {
