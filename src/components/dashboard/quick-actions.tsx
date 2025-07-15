@@ -136,7 +136,7 @@ export function QuickActions({ onTransactionAdded, currentBalance }: QuickAction
                     <div className="grid grid-cols-2 gap-4">
                         <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
                             <DialogTrigger asChild>
-                                <Button>
+                                <Button className="w-full flex items-center justify-center">
                                     <ArrowUpRight className="mr-2 h-4 w-4" /> Transfer Funds
                                 </Button>
                             </DialogTrigger>
@@ -171,7 +171,7 @@ export function QuickActions({ onTransactionAdded, currentBalance }: QuickAction
 
                         <Dialog open={isPayBillOpen} onOpenChange={setIsPayBillOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="secondary">
+                                <Button variant="secondary" className="w-full flex items-center justify-center">
                                     <Receipt className="mr-2 h-4 w-4" /> Pay Bills
                                 </Button>
                             </DialogTrigger>
