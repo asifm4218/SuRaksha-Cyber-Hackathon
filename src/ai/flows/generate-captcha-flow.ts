@@ -11,15 +11,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const GenerateCaptchaInputSchema = z.object({
-  subject: z.string().describe('The subject of the image to generate for the CAPTCHA. e.g., "a red apple"'),
-});
+const GenerateCaptchaInputSchema = z.object({});
 export type GenerateCaptchaInput = z.infer<typeof GenerateCaptchaInputSchema>;
 
 const GenerateCaptchaOutputSchema = z.object({
   imageUrl: z.string().url().describe("The data URI of the generated image. Expected format: 'data:image/png;base64,<encoded_data>'."),
-  correctLabel: z.string().describe('The correct label for the image.'),
-  incorrectLabels: z.array(z.string()).length(3).describe('An array of three distinct, incorrect labels.'),
+  correctText: z.string().describe('The correct text string for the CAPTCHA challenge.'),
 });
 export type GenerateCaptchaOutput = z.infer<typeof GenerateCaptchaOutputSchema>;
 
@@ -27,12 +24,15 @@ export async function generateCaptcha(input: GenerateCaptchaInput): Promise<Gene
   return generateCaptchaFlow(input);
 }
 
-const incorrectLabelsPrompt = ai.definePrompt({
-  name: 'incorrectLabelsPrompt',
-  input: { schema: z.object({ subject: z.string() }) },
-  output: { schema: z.object({ labels: z.array(z.string()).length(3) }) },
-  prompt: `Generate three single-word, common noun, incorrect labels for an image of '{{subject}}'. The labels should be completely unrelated to the subject.`,
-});
+// Helper function to generate a random alphanumeric string
+const generateRandomString = (length: number) => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
 
 const generateCaptchaFlow = ai.defineFlow(
   {
@@ -41,32 +41,24 @@ const generateCaptchaFlow = ai.defineFlow(
     outputSchema: GenerateCaptchaOutputSchema,
   },
   async (input) => {
-    // Generate the image and the incorrect labels in parallel to save time.
-    const [imageResponse, labelsResponse] = await Promise.all([
-      ai.generate({
+    const captchaText = generateRandomString(6);
+
+    const imageResponse = await ai.generate({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: `Generate a clear, high-quality image of a single object: ${input.subject}, on a plain white background.`,
+        prompt: `Generate a CAPTCHA image. The image should contain the exact text "${captchaText}". The text must be heavily distorted, warped, and skewed to make it difficult for bots to read, but still legible to humans. Use a cluttered, noisy, or patterned background to further obscure the text. Ensure the text itself has varying fonts, sizes, and rotations.`,
         config: {
-          responseModalities: ['TEXT', 'IMAGE'],
+            responseModalities: ['TEXT', 'IMAGE'],
         },
-      }),
-      incorrectLabelsPrompt({ subject: input.subject }),
-    ]);
+    });
 
     const imageUrl = imageResponse.media?.url;
     if (!imageUrl) {
       throw new Error('Failed to generate CAPTCHA image.');
     }
 
-    const incorrectLabels = labelsResponse.output?.labels;
-    if (!incorrectLabels) {
-        throw new Error('Failed to generate incorrect labels.');
-    }
-
     return {
       imageUrl,
-      correctLabel: input.subject,
-      incorrectLabels,
+      correctText: captchaText,
     };
   }
 );

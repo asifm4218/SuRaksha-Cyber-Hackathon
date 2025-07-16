@@ -294,42 +294,16 @@ async function sendNotificationEmail(input: SendEmailNotificationInput) {
 }
 
 // === CAPTCHA Action ===
-
-const captchaSubjects = [
-    'a red apple',
-    'a blue car',
-    'a yellow banana',
-    'a green tree',
-    'a brown dog',
-    'a white cat',
-    'an orange basketball',
-    'a purple flower',
-    'a silver laptop',
-    'a black smartphone',
-    'a pair of sunglasses',
-    'a leather wallet',
-    'a cup of coffee',
-    'a slice of pizza',
-    'a chocolate donut',
-    'a classic watch',
-    'a single red rose',
-    'a blue bird',
-    'a green frog',
-    'a golden key',
-];
-
 export async function getCaptchaChallenge(): Promise<GenerateCaptchaOutput> {
     try {
-        const subject = captchaSubjects[Math.floor(Math.random() * captchaSubjects.length)];
-        const result = await generateCaptcha({ subject });
+        const result = await generateCaptcha({});
         return result;
     } catch (error) {
         console.error("Error generating CAPTCHA challenge:", error);
         // Fallback in case of an error
         return {
-            imageUrl: 'https://placehold.co/256x256/ccc/333.png?text=Error',
-            correctLabel: 'Error',
-            incorrectLabels: ['Could not', 'load', 'challenge'],
+            imageUrl: 'https://placehold.co/300x100/ccc/333.png?text=Error',
+            correctText: 'error',
         };
     }
 }

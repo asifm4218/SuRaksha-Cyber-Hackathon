@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck, Image as ImageIcon } from "lucide-react";
+import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck, RefreshCw } from "lucide-react";
 import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils";
 import {
     Dialog,
@@ -34,16 +34,6 @@ function Logo({ className }: { className?: string }) {
   );
 }
 
-// Fisher-Yates shuffle algorithm
-function shuffleArray<T>(array: T[]): T[] {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-}
-
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -60,18 +50,14 @@ export default function SignInPage() {
   const [isCaptchaOpen, setIsCaptchaOpen] = useState(false);
   const [captchaChallenge, setCaptchaChallenge] = useState<GenerateCaptchaOutput | null>(null);
   const [isCaptchaLoading, setIsCaptchaLoading] = useState(false);
-  const [selectedCaptchaLabel, setSelectedCaptchaLabel] = useState<string | null>(null);
-  const [captchaOptions, setCaptchaOptions] = useState<string[]>([]);
+  const [captchaInput, setCaptchaInput] = useState("");
 
   const loadCaptcha = async () => {
     setIsCaptchaLoading(true);
     setCaptchaChallenge(null);
-    setSelectedCaptchaLabel(null);
+    setCaptchaInput("");
     const challenge = await getCaptchaChallenge();
     setCaptchaChallenge(challenge);
-    if (challenge.correctLabel !== 'Error') {
-      setCaptchaOptions(shuffleArray([challenge.correctLabel, ...challenge.incorrectLabels]));
-    }
     setIsCaptchaLoading(false);
   }
 
@@ -324,31 +310,29 @@ export default function SignInPage() {
                     <ShieldCheck className="text-primary"/> Human Verification
                 </DialogTitle>
                 <DialogDescription className="text-center pt-2">
-                    To protect your account, please solve this simple challenge.
+                    To protect your account, please type the text from the image below.
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center justify-center p-4 gap-4">
                 {isCaptchaLoading ? (
-                    <div className="w-64 h-64 flex flex-col items-center justify-center gap-4">
+                    <div className="w-full h-[100px] flex flex-col items-center justify-center gap-4">
                         <Skeleton className="w-full h-full" />
-                        <Skeleton className="h-4 w-3/4" />
                     </div>
-                ) : captchaChallenge?.imageUrl && captchaChallenge.correctLabel !== 'Error' ? (
+                ) : captchaChallenge?.imageUrl && captchaChallenge.correctText !== 'error' ? (
                     <>
-                        <Image src={captchaChallenge.imageUrl} alt="CAPTCHA image" width={256} height={256} className="rounded-lg border shadow-sm"/>
-                        <p className="text-sm text-muted-foreground text-center">Select the button that correctly describes the image.</p>
-                        <div className="grid grid-cols-2 gap-3 w-full pt-2">
-                            {captchaOptions.map((label, index) => (
-                                <Button
-                                    key={index}
-                                    variant={selectedCaptchaLabel === label ? 'default' : 'outline'}
-                                    onClick={() => setSelectedCaptchaLabel(label)}
-                                    className="capitalize"
-                                >
-                                    {label}
-                                </Button>
-                            ))}
+                        <div className="relative">
+                            <Image src={captchaChallenge.imageUrl} alt="CAPTCHA image" width={300} height={100} className="rounded-lg border shadow-sm bg-muted"/>
+                            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={loadCaptcha} disabled={isCaptchaLoading}>
+                                <RefreshCw className={`h-4 w-4 ${isCaptchaLoading ? 'animate-spin' : ''}`}/>
+                            </Button>
                         </div>
+                        <Input 
+                            value={captchaInput}
+                            onChange={(e) => setCaptchaInput(e.target.value.toLowerCase())}
+                            placeholder="Type the text here"
+                            className="text-center tracking-widest"
+                            maxLength={6}
+                        />
                     </>
                 ) : (
                     <div className="text-center text-destructive p-4">
@@ -361,7 +345,7 @@ export default function SignInPage() {
                 <Button 
                     className="w-full"
                     onClick={handleCaptchaAndLogin}
-                    disabled={isLoginLoading || isCaptchaLoading || selectedCaptchaLabel !== captchaChallenge?.correctLabel}
+                    disabled={isLoginLoading || isCaptchaLoading || captchaInput !== captchaChallenge?.correctText}
                 >
                     {isLoginLoading ? <LoaderCircle className="animate-spin" /> : 'Sign in'}
                 </Button>
