@@ -50,12 +50,12 @@ export function TransactionHistory({ initialTransactions }: TransactionHistoryPr
     }, []);
 
     React.useEffect(() => {
-        let transactions = initialTransactions;
+        let transactions = initialTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         if (activeTab === 'sent') {
-            transactions = initialTransactions.filter(t => t.type === 'Debit');
+            transactions = transactions.filter(t => t.type === 'Debit');
         } else if (activeTab === 'received') {
-            transactions = initialTransactions.filter(t => t.type === 'Credit');
+            transactions = transactions.filter(t => t.type === 'Credit');
         }
 
         if (searchTerm) {

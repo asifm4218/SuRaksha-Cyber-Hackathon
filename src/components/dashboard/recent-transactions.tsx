@@ -31,6 +31,7 @@ import { Skeleton } from "../ui/skeleton";
 import { format } from 'date-fns';
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface RecentTransactionsProps {
   initialTransactions: Transaction[];
@@ -39,6 +40,8 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ initialTransactions, isClient }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState(initialTransactions);
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email');
 
   useEffect(() => {
       setTransactions(initialTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -47,7 +50,7 @@ export function RecentTransactions({ initialTransactions, isClient }: RecentTran
   const recentTransactions = transactions.slice(0, 5);
 
   return (
-    <Card className="xl:col-span-2 shadow-sm">
+    <Card className="xl:col-span-2 shadow-sm flex flex-col flex-1">
       <CardHeader className="flex flex-row items-center">
         <div className="grid gap-2">
           <CardTitle>Transactions</CardTitle>
@@ -56,12 +59,12 @@ export function RecentTransactions({ initialTransactions, isClient }: RecentTran
           </CardDescription>
         </div>
         <Button asChild size="sm" className="ml-auto gap-1">
-          <Link href="/dashboard/transactions">
+          <Link href={`/dashboard/transactions?email=${email}`}>
             View All
           </Link>
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         <Table>
           <TableHeader>
             <TableRow>
