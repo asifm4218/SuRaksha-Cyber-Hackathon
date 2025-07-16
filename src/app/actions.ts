@@ -304,6 +304,18 @@ const captchaSubjects = [
     'a white cat',
     'an orange basketball',
     'a purple flower',
+    'a silver laptop',
+    'a black smartphone',
+    'a pair of sunglasses',
+    'a leather wallet',
+    'a cup of coffee',
+    'a slice of pizza',
+    'a chocolate donut',
+    'a classic watch',
+    'a single red rose',
+    'a blue bird',
+    'a green frog',
+    'a golden key',
 ];
 
 export async function getCaptchaChallenge(): Promise<GenerateCaptchaOutput> {
