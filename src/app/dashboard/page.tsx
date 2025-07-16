@@ -150,91 +150,94 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-4 md:gap-8">
         {isLoading ? <Skeleton className="h-48 w-full" /> : <AccountSummary balance={balance} />}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
-              <DialogTrigger asChild>
-                  <Button className="w-full flex items-center justify-center text-base py-6">
-                      <ArrowUpRight className="mr-2 h-5 w-5" /> Transfer Funds
-                  </Button>
-              </DialogTrigger>
-              <DialogContent>
-                  <DialogHeader>
-                      <DialogTitle>Transfer Funds</DialogTitle>
-                      <DialogDescription>
-                          Send money to another account. Please double-check the details before sending.
-                      </DialogDescription>
-                  </DialogHeader>
-                  <form ref={transferFormRef} onSubmit={(e) => handleInitiateAction(e, 'transfer')}>
-                      <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                              <Label htmlFor="recipient">Recipient Account</Label>
-                              <Input id="recipient" name="recipient" placeholder="Enter account number or UPI ID" required />
-                          </div>
-                          <div className="grid gap-2">
-                              <Label htmlFor="amount">Amount (₹)</Label>
-                              <Input id="amount" name="amount" type="number" placeholder="0.00" required />
-                          </div>
-                          <div className="grid gap-2">
-                              <Label htmlFor="remarks">Remarks (Optional)</Label>
-                              <Input id="remarks" name="remarks" placeholder="e.g., Dinner last night" />
-                          </div>
-                      </div>
-                      <DialogFooter>
-                          <Button type="submit">Proceed to Pay</Button>
-                      </DialogFooter>
-                  </form>
-              </DialogContent>
-          </Dialog>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
+                <DialogTrigger asChild>
+                    <Button className="w-full flex items-center justify-center text-base py-6">
+                        <ArrowUpRight className="mr-2 h-5 w-5" /> Transfer Funds
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Transfer Funds</DialogTitle>
+                        <DialogDescription>
+                            Send money to another account. Please double-check the details before sending.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form ref={transferFormRef} onSubmit={(e) => handleInitiateAction(e, 'transfer')}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="recipient">Recipient Account</Label>
+                                <Input id="recipient" name="recipient" placeholder="Enter account number or UPI ID" required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="amount">Amount (₹)</Label>
+                                <Input id="amount" name="amount" type="number" placeholder="0.00" required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="remarks">Remarks (Optional)</Label>
+                                <Input id="remarks" name="remarks" placeholder="e.g., Dinner last night" />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit">Proceed to Pay</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
-          <Dialog open={isPayBillOpen} onOpenChange={setIsPayBillOpen}>
-              <DialogTrigger asChild>
-                  <Button variant="secondary" className="w-full flex items-center justify-center text-base py-6">
-                      <Receipt className="mr-2 h-5 w-5" /> Pay Bills
-                  </Button>
-              </DialogTrigger>
-              <DialogContent>
-                  <DialogHeader>
-                      <DialogTitle>Pay a Bill</DialogTitle>
-                      <DialogDescription>
-                          Select a biller and enter the amount to pay.
-                      </DialogDescription>
-                  </DialogHeader>
-                  <form ref={billPayFormRef} onSubmit={(e) => handleInitiateAction(e, 'bill')}>
-                      <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                              <Label htmlFor="biller">Select Biller</Label>
-                              <Select name="biller" required>
-                                  <SelectTrigger id="biller">
-                                      <SelectValue placeholder="Choose a biller" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                      <SelectItem value="Electricity Board">Electricity Board</SelectItem>
-                                      <SelectItem value="Water Supply">Water Supply</SelectItem>
-                                      <SelectItem value="Broadband/Internet">Broadband/Internet</SelectItem>
-                                      <SelectItem value="Gas Cylinder">Gas Cylinder</SelectItem>
-                                      <SelectItem value="Mobile Recharge">Mobile Recharge</SelectItem>
-                                  </SelectContent>
-                              </Select>
-                          </div>
-                          <div className="grid gap-2">
-                              <Label htmlFor="bill-amount">Amount (₹)</Label>
-                              <Input id="bill-amount" name="bill-amount" type="number" placeholder="0.00" required />
-                          </div>
-                      </div>
-                      <DialogFooter>
-                          <Button type="submit">Proceed to Pay</Button>
-                      </DialogFooter>
-                  </form>
-              </DialogContent>
-          </Dialog>
+            <Dialog open={isPayBillOpen} onOpenChange={setIsPayBillOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="secondary" className="w-full flex items-center justify-center text-base py-6">
+                        <Receipt className="mr-2 h-5 w-5" /> Pay Bills
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Pay a Bill</DialogTitle>
+                        <DialogDescription>
+                            Select a biller and enter the amount to pay.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form ref={billPayFormRef} onSubmit={(e) => handleInitiateAction(e, 'bill')}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="biller">Select Biller</Label>
+                                <Select name="biller" required>
+                                    <SelectTrigger id="biller">
+                                        <SelectValue placeholder="Choose a biller" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Electricity Board">Electricity Board</SelectItem>
+                                        <SelectItem value="Water Supply">Water Supply</SelectItem>
+                                        <SelectItem value="Broadband/Internet">Broadband/Internet</SelectItem>
+                                        <SelectItem value="Gas Cylinder">Gas Cylinder</SelectItem>
+                                        <SelectItem value="Mobile Recharge">Mobile Recharge</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="bill-amount">Amount (₹)</Label>
+                                <Input id="bill-amount" name="bill-amount" type="number" placeholder="0.00" required />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit">Proceed to Pay</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
-          <div className="md:col-span-1">
-            <BehaviorMonitor />
-          </div>
+             <div className="md:col-span-2 lg:col-span-1">
+                <BehaviorMonitor />
+            </div>
         </div>
 
-        <RecentTransactions initialTransactions={transactions} isClient={!isLoading} />
-        <SecurityOverview />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+            <div className="lg:col-span-3">
+                <RecentTransactions initialTransactions={transactions} isClient={!isLoading} />
+            </div>
+        </div>
       </div>
 
       <Dialog open={isMpinDialogOpen} onOpenChange={(open) => { if (!open) setMpin(""); setIsMpinDialogOpen(open); }}>
