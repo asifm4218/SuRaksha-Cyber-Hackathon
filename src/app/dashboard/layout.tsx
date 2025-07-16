@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRightLeft,
   Bell,
@@ -42,10 +42,12 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIdle } from "@/hooks/use-idle";
 import { handleSessionTimeout } from "@/app/actions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BehaviorTracker } from "@/services/behavior-tracking-service";
 
 
 function Logo({ className }: { className?: string }) {
@@ -67,7 +69,22 @@ export default function DashboardLayout({
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
   const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportData, setReportData] = useState(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const tracker = new BehaviorTracker((data) => {
+        setReportData(data);
+        setIsReportOpen(true);
+    });
+
+    tracker.start();
+
+    return () => {
+        tracker.stop();
+    };
+  }, []);
 
   const navItems = [
     { href: `/dashboard?email=${email}`, icon: LayoutGrid, label: "Dashboard" },
@@ -256,6 +273,53 @@ export default function DashboardLayout({
                 </Button>
             </DialogFooter>
         </DialogContent>
+    </Dialog>
+
+    <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Behavioral Biometrics Report</DialogTitle>
+          <DialogDescription>
+            This is a real-time summary of the behavioral data collected during your session.
+          </DialogDescription>
+        </DialogHeader>
+        {reportData && (
+          <ScrollArea className="max-h-[60vh] pr-6">
+            <div className="grid gap-4 py-4 text-sm">
+                <div className="grid grid-cols-2 gap-4">
+                    <p><strong>Session Duration:</strong> {reportData.sessionDuration}</p>
+                    <p><strong>Typing Speed:</strong> {reportData.typingSpeedWPM} WPM</p>
+                    <p><strong>Corrections (Backspaces):</strong> {reportData.mistakes}</p>
+                </div>
+                <div>
+                    <h4 className="font-semibold mb-2">Mouse Movements (last 100):</h4>
+                    <pre className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
+                        <code>{JSON.stringify(reportData.mouseMovements.slice(-100), null, 2)}</code>
+                    </pre>
+                </div>
+                 <div>
+                    <h4 className="font-semibold mb-2">Mouse Clicks:</h4>
+                    <pre className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
+                        <code>{JSON.stringify(reportData.clicks, null, 2)}</code>
+                    </pre>
+                </div>
+                 <div>
+                    <h4 className="font-semibold mb-2">Key Hold Durations (last 10):</h4>
+                    <pre className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
+                        <code>{JSON.stringify(reportData.keyHoldDurations.slice(-10), null, 2)}</code>
+                    </pre>
+                </div>
+                 <div>
+                    <h4 className="font-semibold mb-2">Text Typed:</h4>
+                    <p className="bg-muted p-2 rounded-md text-xs break-words">{reportData.finalText || "(None)"}</p>
+                </div>
+            </div>
+          </ScrollArea>
+        )}
+        <DialogFooter>
+          <Button onClick={() => setIsReportOpen(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
     </>
   );
