@@ -322,13 +322,10 @@ export default function SignInPage() {
                     <>
                         <div className="relative">
                             <Image src={captchaChallenge.imageUrl} alt="CAPTCHA image" width={300} height={100} className="rounded-lg border shadow-sm bg-muted"/>
-                            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={loadCaptcha} disabled={isCaptchaLoading}>
-                                <RefreshCw className={`h-4 w-4 ${isCaptchaLoading ? 'animate-spin' : ''}`}/>
-                            </Button>
                         </div>
                         <Input 
                             value={captchaInput}
-                            onChange={(e) => setCaptchaInput(e.target.value.toLowerCase())}
+                            onChange={(e) => setCaptchaInput(e.target.value)}
                             placeholder="Type the text here"
                             className="text-center tracking-widest"
                             maxLength={6}
@@ -345,7 +342,7 @@ export default function SignInPage() {
                 <Button 
                     className="w-full"
                     onClick={handleCaptchaAndLogin}
-                    disabled={isLoginLoading || isCaptchaLoading || captchaInput !== captchaChallenge?.correctText}
+                    disabled={isLoginLoading || isCaptchaLoading || captchaInput.toLowerCase() !== captchaChallenge?.correctText.toLowerCase()}
                 >
                     {isLoginLoading ? <LoaderCircle className="animate-spin" /> : 'Sign in'}
                 </Button>
