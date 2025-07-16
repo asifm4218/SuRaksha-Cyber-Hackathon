@@ -16,13 +16,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Building } from "lucide-react"
+import { Smartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <Building className="h-8 w-8 text-primary" />
+      <Smartphone className="h-8 w-8 text-primary" />
       <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
     </div>
   );

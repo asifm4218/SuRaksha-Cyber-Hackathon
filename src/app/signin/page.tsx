@@ -4,23 +4,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
-import ReCAPTCHA from "react-google-recaptcha";
 import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin } from "@/app/actions";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Building, Fingerprint, LoaderCircle } from "lucide-react";
+import { Smartphone, Fingerprint, LoaderCircle } from "lucide-react";
 import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils";
 import {
     Dialog,
@@ -34,7 +26,7 @@ import {
 function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <Building className="h-8 w-8 text-primary" />
+      <Smartphone className="h-8 w-8 text-primary" />
       <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
     </div>
   );
@@ -48,16 +40,10 @@ export default function SignInPage() {
 
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
-  const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
   
   const [isBiometricPromptOpen, setIsBiometricPromptOpen] = useState(false);
   const [biometricStep, setBiometricStep] = useState<'initial' | 'scanning' | 'success' | 'error'>('initial');
   const [biometricError, setBiometricError] = useState('');
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleStandardLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,90 +150,88 @@ export default function SignInPage() {
     setBiometricError('');
   }
 
-  const onRecaptchaChange = (value: string | null) => {
-    setIsRecaptchaVerified(!!value);
-  }
 
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
-          <CardHeader className="items-center text-center">
-            <Logo className="mb-4" />
-            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-            <CardDescription>
-              Sign in to access your secure banking dashboard.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form ref={formRef} onSubmit={handleStandardLogin} className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="suresh@example.com"
-                  required
-                  defaultValue="analyst@canara.co"
-                  ref={emailRef}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/forgot-password"
-                    className="ml-auto inline-block text-sm underline"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
-                <Input id="password" name="password" type="password" required defaultValue="password123" />
-              </div>
-               {isClient && <div className="flex justify-center">
-                 <ReCAPTCHA
-                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-                    onChange={onRecaptchaChange}
-                  />
-               </div>}
-              <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading || !isRecaptchaVerified}>
-                {isLoginLoading && <LoaderCircle className="animate-spin mr-2" />}
-                Sign in
-              </Button>
-            </form>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="underline">
-                Sign up
-              </Link>
+    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
+      <div className="flex items-center justify-center py-12">
+        <div className="mx-auto grid w-[350px] gap-6">
+          <div className="grid gap-2 text-center">
+            <Logo className="justify-center mb-2" />
+            <h1 className="text-3xl font-bold">Welcome Back</h1>
+            <p className="text-balance text-muted-foreground">
+              Enter your details to sign in to your account
+            </p>
+          </div>
+          <form ref={formRef} onSubmit={handleStandardLogin} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="suresh@example.com"
+                required
+                defaultValue="analyst@canara.co"
+                ref={emailRef}
+              />
             </div>
-          </CardContent>
-          <CardFooter className="flex-col gap-4">
-            <div className="relative w-full">
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="ml-auto inline-block text-sm underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+              <Input id="password" name="password" type="password" required defaultValue="password123" />
+            </div>
+            <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading}>
+              {isLoginLoading && <LoaderCircle className="animate-spin mr-2" />}
+              Sign in
+            </Button>
+          </form>
+           <div className="relative">
               <div className="absolute inset-0 flex items-center">
                   <Separator />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                      Or
+                  <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
                   </span>
               </div>
             </div>
-            <Button
-              variant="outline"
-              className="w-full font-semibold"
-              onClick={() => setIsBiometricPromptOpen(true)}
-              disabled={isBiometricLoading}
-            >
-                <Fingerprint className="mr-2 h-4 w-4" />
-              Sign in with Biometrics
-            </Button>
-          </CardFooter>
-        </Card>
+          <Button
+            variant="outline"
+            className="w-full font-semibold"
+            onClick={() => setIsBiometricPromptOpen(true)}
+            disabled={isBiometricLoading}
+          >
+              <Fingerprint className="mr-2 h-4 w-4" />
+            Sign in with Biometrics
+          </Button>
+          <div className="mt-4 text-center text-sm">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="underline">
+              Sign up
+            </Link>
+          </div>
+        </div>
       </div>
-
-      <Dialog open={isBiometricPromptOpen} onOpenChange={resetBiometricPrompt}>
+      <div className="hidden bg-muted lg:block">
+        <Image
+          src="https://placehold.co/1080x1920.png"
+          alt="Image"
+          width="1920"
+          height="1080"
+          data-ai-hint="fintech app mobile"
+          className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+        />
+      </div>
+    </div>
+    <Dialog open={isBiometricPromptOpen} onOpenChange={resetBiometricPrompt}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
                 <DialogTitle className="text-center">Biometric Authentication</DialogTitle>
