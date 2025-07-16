@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin } from "@/app/actions";
 
@@ -53,6 +53,11 @@ export default function SignInPage() {
   const [isBiometricPromptOpen, setIsBiometricPromptOpen] = useState(false);
   const [biometricStep, setBiometricStep] = useState<'initial' | 'scanning' | 'success' | 'error'>('initial');
   const [biometricError, setBiometricError] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleStandardLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,12 +205,12 @@ export default function SignInPage() {
                 </div>
                 <Input id="password" name="password" type="password" required defaultValue="password123" />
               </div>
-               <div className="flex justify-center">
+               {isClient && <div className="flex justify-center">
                  <ReCAPTCHA
                     sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
                     onChange={onRecaptchaChange}
                   />
-               </div>
+               </div>}
               <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading || !isRecaptchaVerified}>
                 {isLoginLoading && <LoaderCircle className="animate-spin mr-2" />}
                 Sign in
