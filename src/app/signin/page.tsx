@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin } from "@/app/actions";
 
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ export default function SignInPage() {
 
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+  const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
   
   const [isBiometricPromptOpen, setIsBiometricPromptOpen] = useState(false);
   const [biometricStep, setBiometricStep] = useState<'initial' | 'scanning' | 'success' | 'error'>('initial');
@@ -157,6 +159,10 @@ export default function SignInPage() {
     setBiometricError('');
   }
 
+  const onRecaptchaChange = (value: string | null) => {
+    setIsRecaptchaVerified(!!value);
+  }
+
   return (
     <>
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -194,7 +200,13 @@ export default function SignInPage() {
                 </div>
                 <Input id="password" name="password" type="password" required defaultValue="password123" />
               </div>
-              <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading}>
+               <div className="flex justify-center">
+                 <ReCAPTCHA
+                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                    onChange={onRecaptchaChange}
+                  />
+               </div>
+              <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading || !isRecaptchaVerified}>
                 {isLoginLoading && <LoaderCircle className="animate-spin mr-2" />}
                 Sign in
               </Button>
