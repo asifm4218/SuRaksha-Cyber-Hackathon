@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
-import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin } from "@/app/actions";
+import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin, getCaptchaChallenge } from "@/app/actions";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Smartphone, Fingerprint, LoaderCircle } from "lucide-react";
+import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck, Image as ImageIcon } from "lucide-react";
 import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils";
 import {
     Dialog,
@@ -22,6 +22,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { GenerateCaptchaOutput } from "@/ai/flows/generate-captcha-flow";
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -30,6 +32,16 @@ function Logo({ className }: { className?: string }) {
       <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
     </div>
   );
+}
+
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
 }
 
 export default function SignInPage() {
@@ -45,11 +57,34 @@ export default function SignInPage() {
   const [biometricStep, setBiometricStep] = useState<'initial' | 'scanning' | 'success' | 'error'>('initial');
   const [biometricError, setBiometricError] = useState('');
 
-  const handleStandardLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formRef.current) return;
+  const [isCaptchaOpen, setIsCaptchaOpen] = useState(false);
+  const [captchaChallenge, setCaptchaChallenge] = useState<GenerateCaptchaOutput | null>(null);
+  const [isCaptchaLoading, setIsCaptchaLoading] = useState(false);
+  const [selectedCaptchaLabel, setSelectedCaptchaLabel] = useState<string | null>(null);
+  const [captchaOptions, setCaptchaOptions] = useState<string[]>([]);
 
+  const loadCaptcha = async () => {
+    setIsCaptchaLoading(true);
+    setCaptchaChallenge(null);
+    setSelectedCaptchaLabel(null);
+    const challenge = await getCaptchaChallenge();
+    setCaptchaChallenge(challenge);
+    if (challenge.correctLabel !== 'Error') {
+      setCaptchaOptions(shuffleArray([challenge.correctLabel, ...challenge.incorrectLabels]));
+    }
+    setIsCaptchaLoading(false);
+  }
+
+  const handleStandardLoginAttempt = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCaptchaOpen(true);
+    loadCaptcha();
+  };
+
+  const handleCaptchaAndLogin = async () => {
+    if (!formRef.current) return;
     setIsLoginLoading(true);
+
     const formData = new FormData(formRef.current);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -68,6 +103,7 @@ export default function SignInPage() {
           description: result.message,
           variant: "destructive",
         });
+        setIsCaptchaOpen(false); // Close captcha on failure to allow retry
       }
     }
     setIsLoginLoading(false);
@@ -150,7 +186,6 @@ export default function SignInPage() {
     setBiometricError('');
   }
 
-
   return (
     <>
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
@@ -163,7 +198,7 @@ export default function SignInPage() {
               Enter your details to sign in to your account
             </p>
           </div>
-          <form ref={formRef} onSubmit={handleStandardLogin} className="grid gap-4">
+          <form ref={formRef} onSubmit={handleStandardLoginAttempt} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -188,8 +223,7 @@ export default function SignInPage() {
               </div>
               <Input id="password" name="password" type="password" required defaultValue="password123" />
             </div>
-            <Button type="submit" className="w-full font-semibold" disabled={isLoginLoading}>
-              {isLoginLoading && <LoaderCircle className="animate-spin mr-2" />}
+            <Button type="submit" className="w-full font-semibold">
               Sign in
             </Button>
           </form>
@@ -207,7 +241,6 @@ export default function SignInPage() {
             variant="outline"
             className="w-full font-semibold"
             onClick={() => setIsBiometricPromptOpen(true)}
-            disabled={isBiometricLoading}
           >
               <Fingerprint className="mr-2 h-4 w-4" />
             Sign in with Biometrics
@@ -231,6 +264,8 @@ export default function SignInPage() {
         />
       </div>
     </div>
+
+    {/* Biometric Dialog */}
     <Dialog open={isBiometricPromptOpen} onOpenChange={resetBiometricPrompt}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
@@ -279,7 +314,60 @@ export default function SignInPage() {
                 )}
             </DialogFooter>
         </DialogContent>
-      </Dialog>
+    </Dialog>
+
+    {/* CAPTCHA Dialog */}
+    <Dialog open={isCaptchaOpen} onOpenChange={setIsCaptchaOpen}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
+                <DialogTitle className="flex items-center justify-center gap-2">
+                    <ShieldCheck className="text-primary"/> Human Verification
+                </DialogTitle>
+                <DialogDescription className="text-center pt-2">
+                    To protect your account, please solve this simple challenge.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center p-4 gap-4">
+                {isCaptchaLoading ? (
+                    <div className="w-64 h-64 flex flex-col items-center justify-center gap-4">
+                        <Skeleton className="w-full h-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                    </div>
+                ) : captchaChallenge?.imageUrl && captchaChallenge.correctLabel !== 'Error' ? (
+                    <>
+                        <Image src={captchaChallenge.imageUrl} alt="CAPTCHA image" width={256} height={256} className="rounded-lg border shadow-sm"/>
+                        <p className="text-sm text-muted-foreground text-center">Select the button that correctly describes the image.</p>
+                        <div className="grid grid-cols-2 gap-3 w-full pt-2">
+                            {captchaOptions.map((label, index) => (
+                                <Button
+                                    key={index}
+                                    variant={selectedCaptchaLabel === label ? 'default' : 'outline'}
+                                    onClick={() => setSelectedCaptchaLabel(label)}
+                                    className="capitalize"
+                                >
+                                    {label}
+                                </Button>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center text-destructive p-4">
+                        <p>Could not load the verification challenge.</p>
+                        <p className="text-sm text-muted-foreground">Please try again later.</p>
+                    </div>
+                )}
+            </div>
+            <DialogFooter>
+                <Button 
+                    className="w-full"
+                    onClick={handleCaptchaAndLogin}
+                    disabled={isLoginLoading || isCaptchaLoading || selectedCaptchaLabel !== captchaChallenge?.correctLabel}
+                >
+                    {isLoginLoading ? <LoaderCircle className="animate-spin" /> : 'Sign in'}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }

@@ -10,6 +10,9 @@ import { createUser, findUserByEmail, type UserCredentials, storeUserCredential,
 import { readTransactions, writeTransactions } from "@/services/transaction-service";
 import { randomBytes } from 'crypto';
 import type { Transaction } from "@/lib/mock-data";
+import { generateCaptcha } from "@/ai/flows/generate-captcha-flow";
+import type { GenerateCaptchaOutput } from "@/ai/flows/generate-captcha-flow";
+
 
 // Helper to convert string to Base64URL
 function toBase64Url(str: string | Buffer) {
@@ -288,4 +291,33 @@ async function sendNotificationEmail(input: SendEmailNotificationInput) {
     console.error("Error sending notification email:", error);
     // In a real app, you might have more robust error handling or fallback mechanisms.
   }
+}
+
+// === CAPTCHA Action ===
+
+const captchaSubjects = [
+    'a red apple',
+    'a blue car',
+    'a yellow banana',
+    'a green tree',
+    'a brown dog',
+    'a white cat',
+    'an orange basketball',
+    'a purple flower',
+];
+
+export async function getCaptchaChallenge(): Promise<GenerateCaptchaOutput> {
+    try {
+        const subject = captchaSubjects[Math.floor(Math.random() * captchaSubjects.length)];
+        const result = await generateCaptcha({ subject });
+        return result;
+    } catch (error) {
+        console.error("Error generating CAPTCHA challenge:", error);
+        // Fallback in case of an error
+        return {
+            imageUrl: 'https://placehold.co/256x256/ccc/333.png?text=Error',
+            correctLabel: 'Error',
+            incorrectLabels: ['Could not', 'load', 'challenge'],
+        };
+    }
 }
