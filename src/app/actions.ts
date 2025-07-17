@@ -10,9 +10,11 @@ import { createUser, findUserByEmail, type UserCredentials, storeUserCredential,
 import { readTransactions, writeTransactions } from "@/services/transaction-service";
 import { randomBytes } from 'crypto';
 import type { Transaction } from "@/lib/mock-data";
-import { generateCaptcha } from "@/ai/flows/generate-captcha-flow";
-import type { GenerateCaptchaOutput } from "@/ai/flows/generate-captcha-flow";
 
+export interface CaptchaOutput {
+  imageUrl: string;
+  correctText: string;
+}
 
 // Helper to convert string to Base64URL
 function toBase64Url(str: string | Buffer) {
@@ -294,10 +296,53 @@ async function sendNotificationEmail(input: SendEmailNotificationInput) {
 }
 
 // === CAPTCHA Action ===
-export async function getCaptchaChallenge(): Promise<GenerateCaptchaOutput> {
+// Generates a random alphanumeric string
+const generateRandomString = (length: number) => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
+
+// Generates an SVG CAPTCHA image
+const generateCaptchaSvg = (text: string) => {
+  const width = 300;
+  const height = 100;
+  let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="background-color: #f0f1f3;">`;
+  
+  // Add noise lines
+  for (let i = 0; i < 5; i++) {
+    svg += `<line x1="${Math.random() * width}" y1="${Math.random() * height}" x2="${Math.random() * width}" y2="${Math.random() * height}" stroke="#ccc" stroke-width="2"/>`;
+  }
+  
+  // Add text with distortion
+  const textX = width / 2;
+  const textY = height / 2;
+  svg += `<text x="${textX}" y="${textY}" font-family="Arial, sans-serif" font-size="50" fill="#333" text-anchor="middle" dominant-baseline="middle" style="letter-spacing: 15px; font-weight: bold;">`;
+  
+  for (let i = 0; i < text.length; i++) {
+    const rotate = Math.random() * 40 - 20; // -20 to +20 degrees
+    const dy = Math.random() * 20 - 10; // -10 to +10 pixels vertical shift
+    svg += `<tspan rotate="${rotate}" dy="${dy}">${text[i]}</tspan>`;
+  }
+  
+  svg += `</text></svg>`;
+  return svg;
+};
+
+
+export async function getCaptchaChallenge(): Promise<CaptchaOutput> {
     try {
-        const result = await generateCaptcha({});
-        return result;
+        const text = generateRandomString(6);
+        const svg = generateCaptchaSvg(text);
+        const imageUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+
+        return {
+            imageUrl,
+            correctText: text,
+        };
     } catch (error) {
         console.error("Error generating CAPTCHA challenge:", error);
         // Fallback in case of an error

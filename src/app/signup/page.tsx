@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
 import { handleSignup, getRegistrationChallenge, verifyRegistration, getCaptchaChallenge } from "@/app/actions"
+import type { CaptchaOutput } from "@/app/actions";
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,7 +24,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { GenerateCaptchaOutput } from "@/ai/flows/generate-captcha-flow";
 
 
 function Logo({ className }: { className?: string }) {
@@ -43,7 +43,7 @@ export default function SignupPage() {
     const [registerBiometrics, setRegisterBiometrics] = useState(false);
     
     const [isCaptchaOpen, setIsCaptchaOpen] = useState(false);
-    const [captchaChallenge, setCaptchaChallenge] = useState<GenerateCaptchaOutput | null>(null);
+    const [captchaChallenge, setCaptchaChallenge] = useState<CaptchaOutput | null>(null);
     const [isCaptchaLoading, setIsCaptchaLoading] = useState(false);
     const [captchaInput, setCaptchaInput] = useState("");
 
