@@ -315,8 +315,8 @@ export default function SignInPage() {
             </DialogHeader>
             <div className="flex flex-col items-center justify-center p-4 gap-4">
                 {isCaptchaLoading ? (
-                    <div className="w-full h-[100px] flex flex-col items-center justify-center gap-4">
-                        <Skeleton className="w-full h-full" />
+                    <div className="w-full h-[100px] flex items-center justify-center">
+                        <Skeleton className="w-[300px] h-full" />
                     </div>
                 ) : captchaChallenge?.imageUrl && captchaChallenge.correctText !== 'error' ? (
                     <>
@@ -338,11 +338,20 @@ export default function SignInPage() {
                     </div>
                 )}
             </div>
-            <DialogFooter>
+            <DialogFooter className="sm:justify-between gap-2">
+                 <Button 
+                    variant="outline"
+                    className="w-full"
+                    onClick={loadCaptcha}
+                    disabled={isCaptchaLoading}
+                >
+                    {isCaptchaLoading ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+                    New Image
+                </Button>
                 <Button 
                     className="w-full"
                     onClick={handleCaptchaAndLogin}
-                    disabled={isLoginLoading || isCaptchaLoading || captchaInput.toLowerCase() !== captchaChallenge?.correctText.toLowerCase()}
+                    disabled={isLoginLoading || isCaptchaLoading || !captchaChallenge || captchaInput.toLowerCase() !== captchaChallenge?.correctText.toLowerCase()}
                 >
                     {isLoginLoading ? <LoaderCircle className="animate-spin" /> : 'Sign in'}
                 </Button>

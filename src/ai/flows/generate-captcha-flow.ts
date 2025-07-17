@@ -46,7 +46,7 @@ const generateCaptchaFlow = ai.defineFlow(
     const imageResponse = await ai.generate({
         // IMPORTANT: The 'googleai/gemini-2.0-flash-preview-image-generation' is the correct experimental model for this task.
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: `Generate an image of a CAPTCHA with the heavily distorted text "${captchaText}". The background should be noisy and cluttered.`,
+        prompt: `Generate a CAPTCHA image with the heavily distorted text "${captchaText}". The background should be noisy and cluttered with random shapes and lines.`,
         config: {
             // IMPORTANT: This model requires both TEXT and IMAGE modalities to function correctly.
             responseModalities: ['TEXT', 'IMAGE'],

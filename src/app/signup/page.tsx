@@ -5,13 +5,13 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
-import { handleSignup as handleSignupAction, getRegistrationChallenge, verifyRegistration, getCaptchaChallenge } from "@/app/actions"
+import { handleSignup, getRegistrationChallenge, verifyRegistration, getCaptchaChallenge } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck } from "lucide-react"
+import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck, RefreshCw } from "lucide-react"
 import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -47,8 +47,7 @@ export default function SignupPage() {
     const [isCaptchaLoading, setIsCaptchaLoading] = useState(false);
     const [captchaInput, setCaptchaInput] = useState("");
 
-
-    const handleInitiateSignup = (e: React.FormEvent) => {
+    const handleInitiateSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         
         const formData = new FormData(formRef.current!);
@@ -87,7 +86,7 @@ export default function SignupPage() {
         const mpin = formData.get('mpin') as string;
 
         if (email && password && fullName && phone && mpin) {
-            const signupResult = await handleSignupAction({ email, password, fullName, phone, mpin });
+            const signupResult = await handleSignup({ email, password, fullName, phone, mpin });
             if (signupResult.success && signupResult.user) {
                 
                 if (registerBiometrics) {
@@ -238,8 +237,8 @@ export default function SignupPage() {
                 </DialogHeader>
                 <div className="flex flex-col items-center justify-center p-4 gap-4">
                     {isCaptchaLoading ? (
-                        <div className="w-[300px] h-[100px] flex flex-col items-center justify-center gap-4">
-                            <Skeleton className="w-full h-full" />
+                         <div className="w-full h-[100px] flex items-center justify-center">
+                            <Skeleton className="w-[300px] h-full" />
                         </div>
                     ) : captchaChallenge?.imageUrl && captchaChallenge.correctText !== 'error' ? (
                         <>
@@ -271,12 +270,13 @@ export default function SignupPage() {
                         onClick={loadCaptcha}
                         disabled={isCaptchaLoading}
                     >
-                        {isCaptchaLoading ? <LoaderCircle className="animate-spin" /> : 'New Image'}
+                        {isCaptchaLoading ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+                        New Image
                     </Button>
                     <Button 
                         className="w-full"
                         onClick={handleFinalSignup}
-                        disabled={isLoading || isCaptchaLoading || captchaInput.toLowerCase() !== captchaChallenge?.correctText.toLowerCase()}
+                        disabled={isLoading || isCaptchaLoading || !captchaChallenge || captchaInput.toLowerCase() !== captchaChallenge?.correctText.toLowerCase()}
                     >
                         {isLoading ? <LoaderCircle className="animate-spin" /> : 'Create Account'}
                     </Button>
