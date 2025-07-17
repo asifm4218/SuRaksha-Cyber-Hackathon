@@ -6,15 +6,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Fingerprint, BarChart, MousePointerClick } from "lucide-react";
+import { Fingerprint, BarChart, MousePointerClick, HelpCircle } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function BehaviorMonitor() {
   return (
     <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Fingerprint className="h-5 w-5 text-primary" />
-          Behavioral Biometrics
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Fingerprint className="h-5 w-5 text-primary" />
+            Behavioral Biometrics
+          </div>
+           <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Press the 'Esc' key to view the live report.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         </CardTitle>
         <CardDescription>
           Continuous authentication based on your unique interaction patterns.

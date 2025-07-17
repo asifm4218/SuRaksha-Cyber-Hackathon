@@ -1,3 +1,4 @@
+
 // A client-side service to track user behavior for security analysis.
 // This is not a server action. It runs entirely in the browser.
 
@@ -13,7 +14,7 @@ interface TypingData {
 
 interface MouseData {
     movements: { x: number; y: number; timestamp: number }[];
-    clicks: { x: number; y: number; timestamp: number }[];
+    clicks: { x: number; y: number; timestamp: number; pressure?: number }[];
 }
 
 export class BehaviorTracker {
@@ -22,6 +23,7 @@ export class BehaviorTracker {
     private keyPressTimestamps: Map<string, number> = new Map();
     private onReport: (data: any) => void;
     private isTracking: boolean = false;
+    private activeElement: HTMLElement | null = null;
 
     constructor(onReport: (data: any) => void) {
         this.onReport = onReport;
@@ -50,8 +52,8 @@ export class BehaviorTracker {
         this.isTracking = true;
         this.reset();
         
-        window.addEventListener('keydown', this.handleKeyDown);
-        window.addEventListener('keyup', this.handleKeyUp);
+        window.addEventListener('focusin', this.handleFocusIn);
+        window.addEventListener('focusout', this.handleFocusOut);
         window.addEventListener('mousemove', this.handleMouseMove);
         window.addEventListener('click', this.handleMouseClick);
         
@@ -62,8 +64,9 @@ export class BehaviorTracker {
         if (!this.isTracking) return;
         this.isTracking = false;
         
-        window.removeEventListener('keydown', this.handleKeyDown);
-        window.removeEventListener('keyup', this.handleKeyUp);
+        this.detachTypingListeners();
+        window.removeEventListener('focusin', this.handleFocusIn);
+        window.removeEventListener('focusout', this.handleFocusOut);
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('click', this.handleMouseClick);
 
@@ -71,15 +74,35 @@ export class BehaviorTracker {
         this.generateReport();
     }
 
+    private handleFocusIn = (e: FocusEvent) => {
+        const target = e.target as HTMLElement;
+        if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+            this.activeElement = target;
+            this.attachTypingListeners();
+        }
+    }
+
+    private handleFocusOut = (e: FocusEvent) => {
+        const target = e.target as HTMLElement;
+        if (this.activeElement === target) {
+            this.activeElement = null;
+            this.detachTypingListeners();
+        }
+    }
+
+    private attachTypingListeners() {
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('keyup', this.handleKeyUp);
+    }
+    
+    private detachTypingListeners() {
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('keyup', this.handleKeyUp);
+    }
+
     private handleKeyDown = (e: KeyboardEvent) => {
         if (this.typingData.startTime === null) {
             this.typingData.startTime = Date.now();
-        }
-
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            this.stop();
-            return;
         }
 
         if (!this.keyPressTimestamps.has(e.key)) {
@@ -104,19 +127,18 @@ export class BehaviorTracker {
             this.typingData.keyReleases.push({ key: e.key, timestamp: releaseTime, holdDuration });
             this.keyPressTimestamps.delete(e.key);
 
-            if (e.key.length === 1) { // Regular character
+            if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/)) { 
                 this.typingData.text += e.key;
             } else if (e.key === ' ') {
                 this.typingData.text += ' ';
             }
 
-            if (/\s/.test(e.key)) { // Space, Enter, Tab
+            if (/\s/.test(e.key) || e.key === 'Enter') {
                 this.typingData.wordCount = this.typingData.text.trim().split(/\s+/).filter(Boolean).length;
             }
         }
     };
 
-    // Throttle mouse move to avoid performance issues
     private handleMouseMove = throttle((e: MouseEvent) => {
         this.mouseData.movements.push({ x: e.clientX, y: e.clientY, timestamp: Date.now() });
     }, 50); 
@@ -149,9 +171,9 @@ export class BehaviorTracker {
 }
 
 
-function throttle(func, limit) {
-  let inThrottle;
-  return function() {
+function throttle(func: (...args: any[]) => void, limit: number) {
+  let inThrottle: boolean;
+  return function(this: any) {
     const args = arguments;
     const context = this;
     if (!inThrottle) {

@@ -70,7 +70,7 @@ export default function DashboardLayout({
   const email = searchParams.get('email');
   const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [reportData, setReportData] = useState(null);
+  const [reportData, setReportData] = useState<any>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -79,10 +79,19 @@ export default function DashboardLayout({
         setIsReportOpen(true);
     });
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            tracker.stop();
+        }
+    };
+
     tracker.start();
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
         tracker.stop();
+        window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -280,7 +289,7 @@ export default function DashboardLayout({
         <DialogHeader>
           <DialogTitle>Behavioral Biometrics Report</DialogTitle>
           <DialogDescription>
-            This is a real-time summary of the behavioral data collected during your session.
+            This is a real-time summary of the behavioral data collected during your session. Press Esc to generate.
           </DialogDescription>
         </DialogHeader>
         {reportData && (
