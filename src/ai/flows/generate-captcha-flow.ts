@@ -43,12 +43,13 @@ const generateCaptchaFlow = ai.defineFlow(
   async (input) => {
     const captchaText = generateRandomString(6);
 
-    // IMPORTANT: Switched to a more stable image generation model.
     const imageResponse = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
-        prompt: `Generate a standard CAPTCHA image. The image must contain the exact text "${captchaText}". The text must be heavily distorted, warped, and skewed to make it difficult for bots to read, but still legible to humans. Use a cluttered, noisy, or patterned background to further obscure the text. Ensure the text itself has varying fonts, sizes, and rotations. Do not include any other explanatory text in the image.`,
+        // IMPORTANT: The 'googleai/gemini-2.0-flash-preview-image-generation' is the correct experimental model for this task.
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: `Generate an image of a CAPTCHA with the heavily distorted text "${captchaText}". The background should be noisy and cluttered.`,
         config: {
-            responseModalities: ['IMAGE'],
+            // IMPORTANT: This model requires both TEXT and IMAGE modalities to function correctly.
+            responseModalities: ['TEXT', 'IMAGE'],
         },
     });
 
