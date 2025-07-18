@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'VeriSafe - Digital Banking',
+  title: 'Canara Bank - Digital Banking',
   description: 'Experience seamless banking with our advanced digital solutions.',
 };
 

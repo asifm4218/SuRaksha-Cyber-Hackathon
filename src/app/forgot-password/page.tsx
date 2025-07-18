@@ -16,17 +16,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Smartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Logo } from "@/components/logo"
 
-function Logo({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Smartphone className="h-8 w-8 text-primary" />
-      <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
-    </div>
-  );
-}
 
 export default function ForgotPasswordPage() {
     const router = useRouter()
@@ -50,7 +42,10 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md shadow-2xl bg-card text-card-foreground">
         <CardHeader className="items-center text-center">
-            <Logo className="mb-4" />
+            <div className="flex items-center gap-2 mb-4">
+              <Logo className="h-8 w-8 text-primary" />
+              <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
+            </div>
             <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
             <CardDescription>
                 No problem. Enter your email and we&apos;ll send you a reset link.

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Smartphone, LoaderCircle, ShieldCheck, RefreshCw, Eye, EyeOff } from "lucide-react"
+import { LoaderCircle, ShieldCheck, RefreshCw, Eye, EyeOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
     Dialog,
@@ -24,16 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { logFirebaseEvent } from "@/services/firebase"
+import { Logo } from "@/components/logo";
 
-
-function Logo({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Smartphone className="h-8 w-8 text-primary" />
-      <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
-    </div>
-  );
-}
 
 export default function SignupPage() {
     const router = useRouter()
@@ -118,7 +110,7 @@ export default function SignupPage() {
         if (!formRef.current) return;
         
         setIsLoading(true);
-        logFirebaseEvent("registration_start");
+        logFirebaseEvent("sign_up");
         const formData = new FormData(formRef.current);
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -130,8 +122,7 @@ export default function SignupPage() {
             const signupResult = await handleSignup({ email, password, fullName, phone, mpin });
             
             if (signupResult.success && signupResult.user) {
-                logFirebaseEvent("kyc_upload"); // Simulate
-                logFirebaseEvent("kyc_success"); // Simulate
+                logFirebaseEvent("registration_complete", { method: "email" });
 
                 toast({
                     title: "Account Created!",
@@ -141,7 +132,7 @@ export default function SignupPage() {
                 router.push(`/signup/capture?email=${encodeURIComponent(email)}`);
 
             } else {
-                logFirebaseEvent("registration_abandon", { reason: signupResult.message });
+                logFirebaseEvent("registration_failed", { reason: signupResult.message });
                 toast({
                     title: "Sign Up Failed",
                     description: signupResult.message,
@@ -162,10 +153,13 @@ export default function SignupPage() {
         <div className="flex items-center justify-center py-12">
                 <div className="mx-auto grid w-[350px] gap-6">
                     <div className="grid gap-2 text-center">
-                        <Logo className="justify-center mb-2" />
+                        <div className="flex justify-center items-center gap-2 mb-2">
+                          <Logo className="h-8 w-8 text-primary" />
+                          <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
+                        </div>
                         <h1 className="text-3xl font-bold">Create an account</h1>
                         <p className="text-balance text-muted-foreground">
-                        Enter your information to create a new VeriSafe account.
+                        Enter your information to create a new Canara Bank account.
                         </p>
                     </div>
                     <form ref={formRef} onSubmit={handleInitiateSignup} className="grid gap-4">
@@ -321,5 +315,3 @@ export default function SignupPage() {
     </>
   )
 }
-
-    

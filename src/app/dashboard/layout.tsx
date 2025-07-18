@@ -14,8 +14,7 @@ import {
   Settings,
   ShieldAlert,
   UserCircle,
-  Wallet,
-  Building
+  Wallet
 } from "lucide-react";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { cn } from "@/lib/utils";
@@ -49,15 +48,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { BehaviorTracker } from "@/services/behavior-tracking-service";
 import { sessionManager } from "@/services/session-service";
 import { logFirebaseEvent } from "@/services/firebase";
-
-function Logo({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Building className="h-6 w-6 text-primary" />
-      <span className="text-lg font-semibold tracking-tight">VeriSafe</span>
-    </div>
-  );
-}
+import { Logo } from "@/components/logo";
 
 export default function DashboardLayout({
   children,
@@ -147,8 +138,9 @@ export default function DashboardLayout({
       <div className="hidden border-r bg-card md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href={`/?email=${email}`}>
-              <Logo />
+            <Link href={`/?email=${email}`} className="flex items-center gap-2">
+              <Logo className="h-6 w-6" />
+              <span className="font-semibold">Canara Bank</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -210,7 +202,8 @@ export default function DashboardLayout({
                     href={`/dashboard?email=${email}`}
                     className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
-                    <Logo />
+                    <Logo className="h-6 w-6" />
+                    <span>Canara Bank</span>
                 </Link>
                 {navItems.map((item) => (
                     <Link
@@ -250,7 +243,10 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1 md:hidden">
-            <Logo />
+             <div className="flex items-center gap-2">
+              <Logo className="h-6 w-6" />
+              <span className="font-semibold">Canara Bank</span>
+            </div>
           </div>
           <div className="w-full flex-1 hidden md:block">
             {/* Can add search bar here */}
@@ -329,5 +325,3 @@ export default function DashboardLayout({
     </>
   );
 }
-
-    

@@ -1,11 +1,12 @@
 
 "use client";
 
-import { Banknote, BookOpen, Building, ChevronDown, Clock, Globe, LandPlot, Mail, MapPin, Milestone, Moon, Phone, PlayCircle, Search, ShieldCheck, Sun, User, UserPlus } from "lucide-react";
+import { BookOpen, ChevronDown, Clock, Globe, Mail, MapPin, Milestone, Moon, Phone, PlayCircle, Search, ShieldCheck, Sun, User, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Logo } from "@/components/logo";
 
 export default function LandingPage() {
     const router = useRouter();
@@ -31,7 +32,7 @@ export default function LandingPage() {
                 </a>
                 <a href="#" className="flex items-center gap-1.5 hover:text-primary">
                     <Mail className="w-3 h-3" />
-                    support@verisafe.co
+                    support@canarabank.co
                 </a>
                 <a href="#" className="flex items-center gap-1.5 hover:text-primary">
                     <MapPin className="w-3 h-3" />
@@ -51,9 +52,9 @@ export default function LandingPage() {
         <div className="bg-background/80 backdrop-blur-sm text-foreground sticky top-0 z-50 shadow-md">
             <div className="container mx-auto px-4 flex justify-between items-center h-20">
                 <div className="flex items-center gap-3">
-                    <Building className="w-10 h-10 text-primary" />
+                    <Logo className="w-10 h-10" />
                     <div>
-                        <h1 className="text-2xl font-bold text-foreground">VeriSafe</h1>
+                        <h1 className="text-2xl font-bold text-foreground">Canara Bank</h1>
                         <p className="text-xs text-muted-foreground">Secure Banking, Simplified</p>
                     </div>
                 </div>
@@ -85,7 +86,7 @@ export default function LandingPage() {
            <div className="relative container mx-auto px-4 py-32 flex flex-col justify-center items-start">
               <h2 className="text-6xl font-extrabold max-w-2xl leading-tight text-foreground">Smarter, Safer Banking.</h2>
               <p className="text-lg mt-4 max-w-xl text-muted-foreground">
-                VeriSafe uses advanced behavioral AI to continuously protect your account, ensuring only you have access.
+                Canara Bank uses advanced behavioral AI to continuously protect your account, ensuring only you have access.
               </p>
               <div className="mt-8 flex gap-4">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base" onClick={handleApplyNowClick}>

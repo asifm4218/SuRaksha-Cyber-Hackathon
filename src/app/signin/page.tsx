@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck, RefreshCw } from "lucide-react";
+import { Fingerprint, LoaderCircle, ShieldCheck, RefreshCw } from "lucide-react";
 import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils";
 import {
     Dialog,
@@ -26,15 +26,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { logFirebaseEvent, setFirebaseUser, setFirebaseUserProperties } from "@/services/firebase";
 import { sessionManager } from "@/services/session-service";
-
-function Logo({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Smartphone className="h-8 w-8 text-primary" />
-      <span className="text-xl font-semibold tracking-tight">VeriSafe</span>
-    </div>
-  );
-}
+import { Logo } from "@/components/logo";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -69,28 +61,37 @@ export default function SignInPage() {
         (position) => {
           const { latitude, longitude } = position.coords;
           trackLoginLocation(email, latitude, longitude);
+          logFirebaseEvent('location_tracked', { email });
         },
         (error) => {
-          // User denied permission or an error occurred.
-          // This is non-blocking, so we just log it.
           console.warn(`Geolocation error: ${error.message}`);
+          logFirebaseEvent('location_denied', { email });
         }
       );
     } else {
       console.warn("Geolocation is not supported by this browser.");
+      logFirebaseEvent('location_unsupported', { email });
     }
   };
 
 
-  const onLoginSuccess = (user: { email: string, fullName?: string }) => {
+  const onLoginSuccess = (user: { email: string, fullName?: string }, method: 'password' | 'biometric') => {
     toast({
         title: "Sign In Successful",
-        description: `Welcome back to VeriSafe, ${user.fullName || 'User'}!`,
+        description: `Welcome back to Canara Bank, ${user.fullName || 'User'}!`,
     });
+    
     // Start client-side processes
-    logFirebaseEvent("login_success", { method: "password" });
+    logFirebaseEvent("login", { method });
     setFirebaseUser(user.email);
-    setFirebaseUserProperties({ account_type: "standard", user_tier: "silver" });
+    
+    if (method === 'biometric') {
+      setFirebaseUserProperties({ account_type: "premium", user_tier: "gold" });
+      logFirebaseEvent("mfa_completed", { method: "biometric" });
+    } else {
+      setFirebaseUserProperties({ account_type: "standard", user_tier: "silver" });
+    }
+    
     sessionManager.createSession(user.email);
     handleLocationTracking(user.email); // Track location
     router.push(`/dashboard?email=${user.email}`);
@@ -114,7 +115,7 @@ export default function SignInPage() {
     if (email && password) {
       const result = await handleLogin({ email, password });
       if (result.success && result.user) {
-        onLoginSuccess(result.user);
+        onLoginSuccess(result.user, 'password');
       } else {
         logFirebaseEvent("login_failure", { method: "password", reason: result.message });
         toast({
@@ -184,14 +185,7 @@ export default function SignInPage() {
                     title: "Biometric Scan Successful",
                     description: "Welcome back! Your identity has been verified.",
                 });
-                // Start client-side processes for biometric login
-                logFirebaseEvent("login_success", { method: "biometric" });
-                logFirebaseEvent("mfa_completed", { method: "biometric" });
-                setFirebaseUser(result.user.email);
-                setFirebaseUserProperties({ account_type: "premium", user_tier: "gold" });
-                sessionManager.createSession(result.user.email);
-                handleLocationTracking(result.user.email);
-                router.push(`/dashboard?email=${result.user.email}`);
+                onLoginSuccess(result.user!, 'biometric');
             }, 2000);
         } else {
             logFirebaseEvent("login_failure", { method: "biometric", reason: "verification_failed" });
@@ -220,7 +214,10 @@ export default function SignInPage() {
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
-            <Logo className="justify-center mb-2" />
+            <div className="flex justify-center items-center gap-2 mb-2">
+              <Logo className="h-8 w-8 text-primary" />
+              <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
+            </div>
             <h1 className="text-3xl font-bold">Welcome Back</h1>
             <p className="text-balance text-muted-foreground">
               Enter your details to sign in to your account
@@ -403,5 +400,3 @@ export default function SignInPage() {
     </>
   );
 }
-
-    

@@ -40,7 +40,7 @@ export function BehaviorMonitor() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          To protect your account after you log in, VeriSafe continuously and non-intrusively analyzes how you interact with the app. This creates a unique "behavioral fingerprint" that is difficult for fraudsters to replicate.
+          To protect your account after you log in, Canara Bank continuously and non-intrusively analyzes how you interact with the app. This creates a unique "behavioral fingerprint" that is difficult for fraudsters to replicate.
         </p>
         <div className="grid gap-3 text-sm">
             <div className="flex items-start gap-3">
