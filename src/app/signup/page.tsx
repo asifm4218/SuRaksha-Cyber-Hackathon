@@ -33,6 +33,8 @@ export default function SignupPage() {
     const formRef = useRef<HTMLFormElement>(null);
     const [isLoading, setIsLoading] = useState(false);
     
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
@@ -44,8 +46,6 @@ export default function SignupPage() {
     const validateForm = (formData: FormData): boolean => {
         const fullName = formData.get('fullName') as string;
         const phone = formData.get('phone') as string;
-        const password = formData.get('password') as string;
-        const confirmPassword = formData.get('confirmPassword') as string;
         const mpin = formData.get('mpin') as string;
 
         if (password !== confirmPassword) {
@@ -113,7 +113,6 @@ export default function SignupPage() {
         logFirebaseEvent("sign_up");
         const formData = new FormData(formRef.current);
         const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
         const fullName = formData.get('fullName') as string;
         const phone = formData.get('phone') as string;
         const mpin = formData.get('mpin') as string;
@@ -191,6 +190,8 @@ export default function SignupPage() {
                                     placeholder="Enter Password" 
                                     required 
                                     autoComplete="new-password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                 />
                                 <Button
                                     type="button"
@@ -213,6 +214,8 @@ export default function SignupPage() {
                                     placeholder="Confirm Password" 
                                     required 
                                     autoComplete="new-password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                 />
                                  <Button
                                     type="button"
