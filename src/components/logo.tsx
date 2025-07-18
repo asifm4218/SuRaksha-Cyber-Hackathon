@@ -9,18 +9,9 @@ export function Logo({ className, ...props }: React.SVGProps<SVGSVGElement> & { 
       className={cn(className)}
       {...props}
     >
-      <rect width="100" height="100" fill="#29B6F6" />
-      <g strokeWidth="8" strokeLinejoin="round" strokeLinecap="round">
-        <path
-          d="M 50,15 L 85,75 L 15,75 Z"
-          fill="none"
-          stroke="white"
-        />
-        <path
-          d="M 50,85 L 15,25 L 85,25 Z"
-          fill="none"
-          stroke="#FFCA28"
-        />
+      <g>
+        <path d="M20 80 L50 20 L80 80 L70 80 L50 40 L30 80 Z" fill="hsl(var(--primary))" />
+        <path d="M35 80 L50 50 L65 80 L55 80 L50 70 L45 80 Z" fill="hsl(var(--accent))" />
       </g>
     </svg>
   );
