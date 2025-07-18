@@ -2,7 +2,6 @@
 import type { LoginLocation } from "@/services/location-service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
 import { MapPin, Clock } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
@@ -25,6 +24,19 @@ const isNewLocation = (current: LoginLocation, history: LoginLocation[], index: 
     // A simple threshold to detect a significant location change (approx > 1km)
     return latDiff > 0.01 || lonDiff > 0.01;
 }
+
+const formatToDelhiTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+    });
+};
 
 
 export function LoginHistoryCard({ loginHistory }: LoginHistoryCardProps) {
@@ -59,7 +71,7 @@ export function LoginHistoryCard({ loginHistory }: LoginHistoryCardProps) {
                             recentHistory.map((login, index) => (
                                 <TableRow key={login.timestamp}>
                                     <TableCell className="font-medium">
-                                        {format(new Date(login.timestamp), "PPP 'at' p")}
+                                        {formatToDelhiTime(login.timestamp)}
                                     </TableCell>
                                     <TableCell>
                                         <Link 
