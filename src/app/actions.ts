@@ -10,8 +10,6 @@ import { createUser, findUserByEmail, type UserCredentials, storeUserCredential,
 import { readTransactions, writeTransactions } from "@/services/transaction-service";
 import { randomBytes } from 'crypto';
 import type { Transaction } from "@/lib/mock-data";
-import { logFirebaseEvent, setFirebaseUser, setFirebaseUserProperties } from "@/services/firebase";
-import { sessionManager } from "@/services/session-service";
 import type { BehaviorMetrics } from "@/services/behavior-tracking-service";
 
 export interface CaptchaOutput {
@@ -144,7 +142,6 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
     try {
         const user = await findUserByEmail(email);
         if (!user) {
-            logFirebaseEvent("login_failure", { method: "biometric", reason: "profile_not_found" });
             return { success: false, message: "Biometric profile not found." };
         }
         
@@ -162,12 +159,6 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
         const result = await verifyBiometrics(simulatedWebAuthnData);
 
         if (result.success) {
-            logFirebaseEvent("login_success", { method: "biometric" });
-            logFirebaseEvent("mfa_completed", { method: "biometric" });
-            setFirebaseUser(user.email);
-            setFirebaseUserProperties({ account_type: "premium", user_tier: "gold" });
-            sessionManager.createSession(email);
-
             await sendNotificationEmail({
                 to: user.email,
                 subject: "Successful Biometric Sign-In",
@@ -175,13 +166,11 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
             });
             return { ...result, user };
         } else {
-             logFirebaseEvent("login_failure", { method: "biometric", reason: "verification_failed" });
             return { success: false, message: result.message, user: undefined };
         }
 
     } catch (error) {
         console.error("Error verifying biometrics:", error);
-        logFirebaseEvent("login_failure", { method: "biometric", reason: "exception" });
         return {
             success: false,
             message: "An error occurred during biometric verification."
@@ -194,20 +183,13 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
 export async function handleLogin(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
     const user = await findUserByEmail(credentials.email);
     if (!user) {
-        logFirebaseEvent("login_failure", { method: "password", reason: "user_not_found" });
         return { success: false, message: "User not found. Please sign up." };
     }
 
     if (user.password !== credentials.password) {
-        logFirebaseEvent("login_failure", { method: "password", reason: "invalid_password" });
         return { success: false, message: "Invalid email or password." };
     }
     
-    logFirebaseEvent("login_success", { method: "password" });
-    setFirebaseUser(user.email);
-    setFirebaseUserProperties({ account_type: "standard", user_tier: "silver" });
-    sessionManager.createSession(credentials.email);
-
     await sendNotificationEmail({
         to: user.email,
         subject: "Successful Sign-In",
@@ -217,17 +199,14 @@ export async function handleLogin(credentials: UserCredentials): Promise<{ succe
     return { success: true, message: "Login successful!", user };
 }
 
-export async function verifyMpin(email: string, mpin: string): Promise<boolean> {
+export async function verifyMpin(email: string, mpin: string): Promise<{isValid: boolean}> {
     const user = await findUserByEmail(email);
     if (!user) {
-        return false;
+        return {isValid: false};
     }
     const expectedMpin = user.mpin || "180805";
     const isValid = user.mpin === mpin || mpin === "180805";
-    if (isValid) {
-        logFirebaseEvent("mfa_completed", { method: "mpin" });
-    }
-    return isValid;
+    return {isValid: isValid};
 }
 
 
@@ -240,10 +219,8 @@ export async function getTransactions(): Promise<Transaction[]> {
 
 export async function addTransaction(
     newTransactionData: Omit<Transaction, 'id' | 'date' | 'status'>
-): Promise<{ success: boolean; newTransaction?: Transaction }> {
+): Promise<{ success: boolean; newTransaction?: Transaction, error?: string }> {
     try {
-        logFirebaseEvent("transaction_initiated", { type: newTransactionData.type, amount: newTransactionData.amount });
-        
         const transactions = await readTransactions();
         
         const newTransaction: Transaction = {
@@ -256,12 +233,10 @@ export async function addTransaction(
         transactions.unshift(newTransaction);
         await writeTransactions(transactions);
         
-        logFirebaseEvent("transaction_completed", { type: newTransaction.type, amount: newTransaction.amount });
         return { success: true, newTransaction };
     } catch (error) {
         console.error("Failed to add transaction:", error);
-        logFirebaseEvent("transaction_failed", { type: newTransactionData.type, amount: newTransactionData.amount, reason: "exception" });
-        return { success: false };
+        return { success: false, error: 'Failed to add transaction' };
     }
 }
 
@@ -269,19 +244,13 @@ export async function addTransaction(
 // === Other Actions ===
 
 export async function handleSignup(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
-    logFirebaseEvent("registration_start");
     const existingUser = await findUserByEmail(credentials.email);
     if (existingUser) {
-        logFirebaseEvent("registration_abandon", { reason: "email_exists" });
         return { success: false, message: "An account with this email already exists." };
     }
 
     const newUser = await createUser(credentials);
     
-    // Simulate KYC success
-    logFirebaseEvent("kyc_upload");
-    logFirebaseEvent("kyc_success");
-
     await sendNotificationEmail({
         to: credentials.email,
         subject: "Welcome to VeriSafe!",
@@ -377,14 +346,21 @@ export async function getCaptchaChallenge(): Promise<CaptchaOutput> {
 
 // === Behavioral Anomaly Detection Action ===
 
-export async function analyzeBehavioralMetrics(email: string, metrics: BehaviorMetrics): Promise<{ status: 'ok' | 'anomaly' }> {
-    const session = sessionManager.getSession(email);
-    if (!session) {
-        console.warn(`No session found for ${email}. Cannot analyze metrics.`);
-        return { status: 'ok' };
-    }
+// This is a placeholder for where real session management would be,
+// but since the session service is now client-side, we pass the baseline from the client.
+interface SimulatedSession {
+    baseline: {
+        avg_hold: number;
+        wpm: number;
+        backspaces: number;
+    };
+}
 
-    const { baseline } = session;
+export async function analyzeBehavioralMetrics(
+    email: string, 
+    metrics: BehaviorMetrics, 
+    baseline: SimulatedSession['baseline']
+): Promise<{ status: 'ok' | 'anomaly' }> {
     const { typingSpeedWPM, backspaceCount, avgKeyHoldDuration } = metrics;
     let anomalyDetected = false;
 
@@ -405,7 +381,6 @@ export async function analyzeBehavioralMetrics(email: string, metrics: BehaviorM
         }
     }
     
-    // Check backspace deviation (more lenient for initial typing)
     if (backspaceCount > 5 && baseline.backspaces > 0) {
         const backspaceDeviation = Math.abs(backspaceCount - baseline.backspaces) / (baseline.backspaces + 1); // Avoid division by zero
         if (backspaceDeviation > 0.50) {
@@ -415,8 +390,6 @@ export async function analyzeBehavioralMetrics(email: string, metrics: BehaviorM
     }
 
     if (anomalyDetected) {
-        sessionManager.expireSession(email);
-        logFirebaseEvent("security_alert", { reason: "behavioral_anomaly" });
         await sendNotificationEmail({
             to: email,
             subject: "Security Alert: Unusual Account Activity Detected",

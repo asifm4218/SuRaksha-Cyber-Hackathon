@@ -46,8 +46,9 @@ import { useIdle } from "@/hooks/use-idle";
 import { handleSessionTimeout, analyzeBehavioralMetrics } from "@/app/actions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BehaviorTracker, type BehaviorMetrics } from "@/services/behavior-tracking-service";
+import { BehaviorTracker } from "@/services/behavior-tracking-service";
 import { sessionManager } from "@/services/session-service";
+import { logFirebaseEvent } from "@/services/firebase";
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -84,23 +85,31 @@ export default function DashboardLayout({
     const handleSessionStatusChange = (status: 'active' | 'expired') => {
         if (status === 'expired') {
             setIsBehaviorAlertDialogOpen(true);
+            logFirebaseEvent("security_alert", { reason: "behavioral_anomaly" });
             tracker.stop();
             if(analysisInterval) clearInterval(analysisInterval);
         }
     };
-    sessionManager.subscribe(handleSessionStatusChange);
+    
+    // Subscribe with the current email
+    sessionManager.subscribe(email, handleSessionStatusChange);
 
     // Periodically send data to the "backend" for analysis
     analysisInterval = setInterval(async () => {
         const metrics = tracker.getMetrics();
-        if (metrics.typingSpeedWPM > 0 || metrics.keyHoldDurations.length > 0) {
-            await analyzeBehavioralMetrics(email, metrics);
+        const session = sessionManager.getSession(email);
+
+        if (session && (metrics.typingSpeedWPM > 0 || metrics.keyHoldDurations.length > 0)) {
+            const result = await analyzeBehavioralMetrics(email, metrics, session.baseline);
+            if (result.status === 'anomaly') {
+                sessionManager.expireSession(email);
+            }
         }
     }, 3000); // Analyze every 3 seconds
 
     return () => {
       tracker.stop();
-      sessionManager.unsubscribe(handleSessionStatusChange);
+      sessionManager.unsubscribe(email, handleSessionStatusChange);
       if (analysisInterval) clearInterval(analysisInterval);
     };
   }, [email]);

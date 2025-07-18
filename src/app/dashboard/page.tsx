@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUpRight, Receipt, LoaderCircle } from "lucide-react";
+import { logFirebaseEvent } from "@/services/firebase";
 
 type PendingAction = {
     type: 'transfer' | 'bill';
@@ -70,8 +71,19 @@ export default function DashboardPage() {
               description: `Paid ₹${data['bill-amount']} for ${data.biller}.`,
           });
       }
+      logFirebaseEvent("transaction_completed", { type: newTransaction.type, amount: newTransaction.amount });
       handleTransactionAdded(newTransaction);
   };
+
+  const handleTransactionFailure = (type: 'transfer' | 'bill', data: any) => {
+    const amount = parseFloat((type === 'transfer' ? data.amount : data['bill-amount']) as string)
+    logFirebaseEvent("transaction_failed", { type: type, amount: amount, reason: "mpin_invalid" });
+    toast({
+        title: "Incorrect MPIN",
+        description: "The MPIN you entered is incorrect. Please try again.",
+        variant: "destructive",
+    });
+  }
 
   const handleInitiateAction = (e: React.FormEvent, type: 'transfer' | 'bill') => {
       e.preventDefault();
@@ -85,9 +97,11 @@ export default function DashboardPage() {
               description: `Your balance is too low to complete this transaction.`,
               variant: "destructive",
           });
+          logFirebaseEvent("transaction_failed", { type: type, amount: amount, reason: "insufficient_funds" });
           return;
       }
       
+      logFirebaseEvent("transaction_initiated", { type: type, amount: amount });
       setPendingAction({ type, data });
       setIsTransferOpen(false);
       setIsPayBillOpen(false);
@@ -101,9 +115,10 @@ export default function DashboardPage() {
       }
       setIsVerifyingMpin(true);
 
-      const isMpinValid = await verifyMpin(email, mpin);
+      const {isValid} = await verifyMpin(email, mpin);
 
-      if (isMpinValid) {
+      if (isValid) {
+          logFirebaseEvent("mfa_completed", { method: "mpin" });
           if (pendingAction?.type === 'transfer') {
               const amount = parseFloat(pendingAction.data.amount as string);
               const result = await addTransaction({
@@ -126,11 +141,9 @@ export default function DashboardPage() {
               }
           }
       } else {
-          toast({
-              title: "Incorrect MPIN",
-              description: "The MPIN you entered is incorrect. Please try again.",
-              variant: "destructive",
-          });
+         if (pendingAction) {
+            handleTransactionFailure(pendingAction.type, pendingAction.data);
+         }
       }
       
       setIsVerifyingMpin(false);
@@ -152,7 +165,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
                   <DialogTrigger asChild>
-                      <Button className="w-full flex items-center justify-center text-base py-6">
+                      <Button className="w-full flex items-center justify-center text-base py-6" onClick={() => logFirebaseEvent("screen_view", { screen_name: 'transfer_funds' })}>
                           <ArrowUpRight className="mr-2 h-5 w-5" /> Transfer Funds
                       </Button>
                   </DialogTrigger>
@@ -187,7 +200,7 @@ export default function DashboardPage() {
 
               <Dialog open={isPayBillOpen} onOpenChange={setIsPayBillOpen}>
                   <DialogTrigger asChild>
-                      <Button variant="secondary" className="w-full flex items-center justify-center text-base py-6">
+                      <Button variant="secondary" className="w-full flex items-center justify-center text-base py-6" onClick={() => logFirebaseEvent("screen_view", { screen_name: 'pay_bill' })}>
                           <Receipt className="mr-2 h-5 w-5" /> Pay Bills
                       </Button>
                   </DialogTrigger>

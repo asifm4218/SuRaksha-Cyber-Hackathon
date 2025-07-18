@@ -24,6 +24,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { logFirebaseEvent } from "@/services/firebase"
 
 
 function Logo({ className }: { className?: string }) {
@@ -78,6 +79,7 @@ export default function SignupPage() {
         if (!formRef.current) return;
         
         setIsLoading(true);
+        logFirebaseEvent("registration_start");
         const formData = new FormData(formRef.current);
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -87,8 +89,11 @@ export default function SignupPage() {
 
         if (email && password && fullName && phone && mpin) {
             const signupResult = await handleSignup({ email, password, fullName, phone, mpin });
+            
             if (signupResult.success && signupResult.user) {
-                
+                logFirebaseEvent("kyc_upload"); // Simulate
+                logFirebaseEvent("kyc_success"); // Simulate
+
                 if (registerBiometrics) {
                     try {
                         const challengeResponse = await getRegistrationChallenge(email, fullName);
@@ -141,6 +146,7 @@ export default function SignupPage() {
                 router.push("/signin");
 
             } else {
+                logFirebaseEvent("registration_abandon", { reason: signupResult.message });
                 toast({
                     title: "Sign Up Failed",
                     description: signupResult.message,

@@ -24,6 +24,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { logFirebaseEvent, setFirebaseUser, setFirebaseUserProperties } from "@/services/firebase";
+import { sessionManager } from "@/services/session-service";
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -78,12 +80,17 @@ export default function SignInPage() {
     if (email && password) {
       const result = await handleLogin({ email, password });
       if (result.success && result.user) {
+        logFirebaseEvent("login_success", { method: "password" });
+        setFirebaseUser(result.user.email);
+        setFirebaseUserProperties({ account_type: "standard", user_tier: "silver" });
+        sessionManager.createSession(result.user.email);
         toast({
             title: "Sign In Successful",
             description: "Welcome back to VeriSafe!",
         });
         router.push(`/dashboard?email=${result.user.email}`);
       } else {
+        logFirebaseEvent("login_failure", { method: "password", reason: result.message });
         toast({
           title: "Sign In Failed",
           description: result.message,
@@ -144,6 +151,12 @@ export default function SignInPage() {
 
         const result = await verifyBiometricLogin(email, verificationData);
         if (result.success && result.user) {
+            logFirebaseEvent("login_success", { method: "biometric" });
+            logFirebaseEvent("mfa_completed", { method: "biometric" });
+            setFirebaseUser(result.user.email);
+            setFirebaseUserProperties({ account_type: "premium", user_tier: "gold" });
+            sessionManager.createSession(result.user.email);
+
             setBiometricStep('success');
             setTimeout(() => {
                 setIsBiometricPromptOpen(false);
@@ -154,10 +167,12 @@ export default function SignInPage() {
                 router.push(`/dashboard?email=${result.user.email}`);
             }, 2000);
         } else {
+            logFirebaseEvent("login_failure", { method: "biometric", reason: "verification_failed" });
             setBiometricError(result.message || "Could not verify identity. Please try again.");
             setBiometricStep('error');
         }
     } catch (error: any) {
+        logFirebaseEvent("login_failure", { method: "biometric", reason: error.name || "exception" });
         console.error("Biometric sign-in error:", error);
         setBiometricError(error.name === 'NotAllowedError' ? 'Authentication cancelled.' : 'An unexpected error occurred.');
         setBiometricStep('error');

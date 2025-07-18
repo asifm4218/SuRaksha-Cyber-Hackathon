@@ -1,4 +1,6 @@
 
+"use client";
+
 // A client-side service to simulate session management in Firestore.
 // This runs entirely in the browser and keeps state in memory.
 
