@@ -8,6 +8,7 @@ import { sendEmailNotification } from "@/ai/flows/send-email-notification-flow";
 import type { SendEmailNotificationInput } from "@/ai/flows/send-email-notification-flow";
 import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential, storeTwoFactorCode, getTwoFactorCode } from "@/services/user-service";
 import { readTransactions, writeTransactions } from "@/services/transaction-service";
+import { storeLoginLocation } from "@/services/location-service";
 import { randomBytes } from 'crypto';
 import type { Transaction } from "@/lib/mock-data";
 import type { BehaviorMetrics } from "@/services/behavior-tracking-service";
@@ -399,4 +400,27 @@ export async function analyzeBehavioralMetrics(
     }
 
     return { status: 'ok' };
+}
+
+// === Geolocation Tracking Action ===
+export async function trackLoginLocation(
+    email: string, 
+    latitude: number, 
+    longitude: number
+): Promise<{ success: boolean }> {
+  try {
+    console.log(`Tracking login for ${email} at (${latitude}, ${longitude})`);
+    // In a real app, you would also get the IP address from the request headers.
+    await storeLoginLocation({
+      email,
+      latitude,
+      longitude,
+      timestamp: new Date().toISOString(),
+      // ipAddress: "x.x.x.x" // This would be retrieved from request context
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to track login location:", error);
+    return { success: false };
+  }
 }

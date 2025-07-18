@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
-import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin, getCaptchaChallenge } from "@/app/actions";
+import { handleLogin, getAuthenticationChallenge, verifyBiometricLogin, getCaptchaChallenge, trackLoginLocation } from "@/app/actions";
 import Image from "next/image";
 import type { CaptchaOutput } from "@/app/actions";
 
@@ -62,6 +62,40 @@ export default function SignInPage() {
     setCaptchaChallenge(challenge);
     setIsCaptchaLoading(false);
   }
+  
+  const handleLocationTracking = (email: string) => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          trackLoginLocation(email, latitude, longitude);
+        },
+        (error) => {
+          // User denied permission or an error occurred.
+          // This is non-blocking, so we just log it.
+          console.warn(`Geolocation error: ${error.message}`);
+        }
+      );
+    } else {
+      console.warn("Geolocation is not supported by this browser.");
+    }
+  };
+
+
+  const onLoginSuccess = (user: { email: string }) => {
+    toast({
+        title: "Sign In Successful",
+        description: "Welcome back to VeriSafe!",
+    });
+    // Start client-side processes
+    logFirebaseEvent("login_success", { method: "password" });
+    setFirebaseUser(user.email);
+    setFirebaseUserProperties({ account_type: "standard", user_tier: "silver" });
+    sessionManager.createSession(user.email);
+    handleLocationTracking(user.email); // Track location
+    router.push(`/dashboard?email=${user.email}`);
+  };
+
 
   const handleStandardLoginAttempt = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,15 +114,7 @@ export default function SignInPage() {
     if (email && password) {
       const result = await handleLogin({ email, password });
       if (result.success && result.user) {
-        logFirebaseEvent("login_success", { method: "password" });
-        setFirebaseUser(result.user.email);
-        setFirebaseUserProperties({ account_type: "standard", user_tier: "silver" });
-        sessionManager.createSession(result.user.email);
-        toast({
-            title: "Sign In Successful",
-            description: "Welcome back to VeriSafe!",
-        });
-        router.push(`/dashboard?email=${result.user.email}`);
+        onLoginSuccess(result.user);
       } else {
         logFirebaseEvent("login_failure", { method: "password", reason: result.message });
         toast({
@@ -151,19 +177,20 @@ export default function SignInPage() {
 
         const result = await verifyBiometricLogin(email, verificationData);
         if (result.success && result.user) {
-            logFirebaseEvent("login_success", { method: "biometric" });
-            logFirebaseEvent("mfa_completed", { method: "biometric" });
-            setFirebaseUser(result.user.email);
-            setFirebaseUserProperties({ account_type: "premium", user_tier: "gold" });
-            sessionManager.createSession(result.user.email);
-
             setBiometricStep('success');
             setTimeout(() => {
                 setIsBiometricPromptOpen(false);
-                toast({
+                 toast({
                     title: "Biometric Scan Successful",
                     description: "Welcome back! Your identity has been verified.",
                 });
+                // Start client-side processes for biometric login
+                logFirebaseEvent("login_success", { method: "biometric" });
+                logFirebaseEvent("mfa_completed", { method: "biometric" });
+                setFirebaseUser(result.user.email);
+                setFirebaseUserProperties({ account_type: "premium", user_tier: "gold" });
+                sessionManager.createSession(result.user.email);
+                handleLocationTracking(result.user.email);
                 router.push(`/dashboard?email=${result.user.email}`);
             }, 2000);
         } else {
