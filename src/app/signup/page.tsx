@@ -12,9 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck, RefreshCw } from "lucide-react"
+import { Smartphone, LoaderCircle, ShieldCheck, RefreshCw, Eye, EyeOff } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     Dialog,
     DialogContent,
@@ -41,6 +40,9 @@ export default function SignupPage() {
     const { toast } = useToast()
     const formRef = useRef<HTMLFormElement>(null);
     const [isLoading, setIsLoading] = useState(false);
+    
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
     const [isCaptchaOpen, setIsCaptchaOpen] = useState(false);
     const [captchaChallenge, setCaptchaChallenge] = useState<CaptchaOutput | null>(null);
@@ -187,11 +189,47 @@ export default function SignupPage() {
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="password">Enter Password</Label>
-                            <Input id="password" name="password" type="password" placeholder="Enter Password" required />
+                            <div className="relative">
+                                <Input 
+                                    id="password" 
+                                    name="password" 
+                                    type={showPassword ? "text" : "password"} 
+                                    placeholder="Enter Password" 
+                                    required 
+                                    autoComplete="new-password"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 h-full -translate-y-1/2"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="confirm-password">Confirm Password</Label>
-                            <Input id="confirm-password" name="confirmPassword" type="password" placeholder="Confirm Password" required />
+                             <div className="relative">
+                                <Input 
+                                    id="confirm-password" 
+                                    name="confirmPassword" 
+                                    type={showConfirmPassword ? "text" : "password"} 
+                                    placeholder="Confirm Password" 
+                                    required 
+                                    autoComplete="new-password"
+                                />
+                                 <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 h-full -translate-y-1/2"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="mpin">6-Digit MPIN</Label>
@@ -283,3 +321,5 @@ export default function SignupPage() {
     </>
   )
 }
+
+    

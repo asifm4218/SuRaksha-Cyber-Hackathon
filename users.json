@@ -74,5 +74,12 @@
     "fullName": "watson",
     "phone": "2345667889",
     "mpin": "123456"
+  },
+  {
+    "email": "DEMO1@GMAIL.COM",
+    "password": "Demo@123?",
+    "fullName": "DEMO",
+    "phone": "9875642583",
+    "mpin": "321654"
   }
 ]

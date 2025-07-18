@@ -22,5 +22,13 @@
       "backspaceCount": 0,
       "avgKeyHoldDuration": 386
     }
+  },
+  {
+    "email": "DEMO1@GMAIL.COM",
+    "baseline": {
+      "typingSpeedWPM": 2.112973658261727,
+      "backspaceCount": 0,
+      "avgKeyHoldDuration": 238
+    }
   }
 ]
