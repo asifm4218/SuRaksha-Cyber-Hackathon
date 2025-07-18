@@ -51,7 +51,13 @@ export default function SignupPage() {
         const fullName = formData.get('fullName') as string;
         const phone = formData.get('phone') as string;
         const password = formData.get('password') as string;
+        const confirmPassword = formData.get('confirmPassword') as string;
         const mpin = formData.get('mpin') as string;
+
+        if (password !== confirmPassword) {
+            toast({ title: "Passwords Do Not Match", description: "Please ensure both password fields are identical.", variant: "destructive" });
+            return false;
+        }
 
         // Full Name: Only characters and spaces
         if (!/^[a-zA-Z\s]+$/.test(fullName)) {
@@ -180,8 +186,12 @@ export default function SignupPage() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input id="password" name="password" type="password" required />
+                            <Label htmlFor="password">Enter Password</Label>
+                            <Input id="password" name="password" type="password" placeholder="Enter Password" required />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="confirm-password">Confirm Password</Label>
+                            <Input id="confirm-password" name="confirmPassword" type="password" placeholder="Confirm Password" required />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="mpin">6-Digit MPIN</Label>
