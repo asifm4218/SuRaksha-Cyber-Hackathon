@@ -175,7 +175,7 @@ export default function SignupPage() {
                             id="email"
                             name="email"
                             type="email"
-                            placeholder="suresh@example.com"
+                            placeholder="Enter your registered mail ID"
                             required
                             />
                         </div>
