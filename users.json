@@ -53,5 +53,19 @@
     "fullName": "asif",
     "phone": "8807704911",
     "mpin": "220805"
+  },
+  {
+    "email": "demo@example.com",
+    "password": "12345678",
+    "fullName": "DEMO",
+    "phone": "9875642583",
+    "mpin": "987456"
+  },
+  {
+    "email": "ABC@GAAIL.COM",
+    "password": "123456",
+    "fullName": "DEMO",
+    "phone": "9874563212",
+    "mpin": "123456"
   }
 ]

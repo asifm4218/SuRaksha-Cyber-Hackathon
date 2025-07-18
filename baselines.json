@@ -1,4 +1,18 @@
-
-[]
-
-    
+[
+  {
+    "email": "demo@example.com",
+    "baseline": {
+      "typingSpeedWPM": 12.651466164356602,
+      "backspaceCount": 17,
+      "avgKeyHoldDuration": 249.11574074074073
+    }
+  },
+  {
+    "email": "ABC@GAAIL.COM",
+    "baseline": {
+      "typingSpeedWPM": 2.78151221547448,
+      "backspaceCount": 0,
+      "avgKeyHoldDuration": 283.57142857142856
+    }
+  }
+]

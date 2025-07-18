@@ -47,17 +47,49 @@ export default function SignupPage() {
     const [isCaptchaLoading, setIsCaptchaLoading] = useState(false);
     const [captchaInput, setCaptchaInput] = useState("");
 
+    const validateForm = (formData: FormData): boolean => {
+        const fullName = formData.get('fullName') as string;
+        const phone = formData.get('phone') as string;
+        const password = formData.get('password') as string;
+        const mpin = formData.get('mpin') as string;
+
+        // Full Name: Only characters and spaces
+        if (!/^[a-zA-Z\s]+$/.test(fullName)) {
+            toast({ title: "Invalid Name", description: "Full name can only contain letters and spaces.", variant: "destructive" });
+            return false;
+        }
+
+        // Phone Number: Exactly 10 digits
+        if (!/^\d{10}$/.test(phone)) {
+            toast({ title: "Invalid Phone Number", description: "Phone number must be exactly 10 digits.", variant: "destructive" });
+            return false;
+        }
+
+        // Password: Strong password validation
+        const isStrongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_#])[A-Za-z\d@$!%*?&_#]{8,}$/.test(password);
+        if (!isStrongPassword) {
+            toast({
+                title: "Weak Password",
+                description: "Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character (#, @, _, etc.).",
+                variant: "destructive",
+            });
+            return false;
+        }
+        
+        // MPIN: Exactly 6 digits
+        if (!/^\d{6}$/.test(mpin)) {
+            toast({ title: "Invalid MPIN", description: "MPIN must be exactly 6 digits.", variant: "destructive" });
+            return false;
+        }
+
+        return true;
+    }
+
     const handleInitiateSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         
         const formData = new FormData(formRef.current!);
-        const mpin = formData.get('mpin') as string;
-        if (mpin.length !== 6 || !/^\d{6}$/.test(mpin)) {
-            toast({
-                title: "Invalid MPIN",
-                description: "MPIN must be exactly 6 digits.",
-                variant: "destructive",
-            });
+        if (!validateForm(formData)) {
             return;
         }
 
@@ -135,7 +167,7 @@ export default function SignupPage() {
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" required />
+                            <Input id="phone" name="phone" type="tel" placeholder="9876543210" required maxLength={10} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
@@ -241,5 +273,3 @@ export default function SignupPage() {
     </>
   )
 }
-
-    
