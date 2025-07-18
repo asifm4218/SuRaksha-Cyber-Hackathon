@@ -67,5 +67,12 @@
     "fullName": "DEMO",
     "phone": "9874563212",
     "mpin": "123456"
+  },
+  {
+    "email": "kishore123@gmail.com",
+    "password": "Welcome23@",
+    "fullName": "watson",
+    "phone": "2345667889",
+    "mpin": "123456"
   }
 ]

@@ -82,10 +82,10 @@ export default function SignInPage() {
   };
 
 
-  const onLoginSuccess = (user: { email: string }) => {
+  const onLoginSuccess = (user: { email: string, fullName?: string }) => {
     toast({
         title: "Sign In Successful",
-        description: "Welcome back to VeriSafe!",
+        description: `Welcome back to VeriSafe, ${user.fullName || 'User'}!`,
     });
     // Start client-side processes
     logFirebaseEvent("login_success", { method: "password" });
@@ -233,7 +233,7 @@ export default function SignInPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="suresh@example.com"
+                placeholder="Enter your mail ID"
                 required
                 defaultValue="analyst@canara.co"
                 ref={emailRef}
@@ -403,3 +403,5 @@ export default function SignInPage() {
     </>
   );
 }
+
+    
