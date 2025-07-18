@@ -22,6 +22,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton";
 import { logFirebaseEvent } from "@/services/firebase"
 import { Logo } from "@/components/logo";
@@ -148,19 +155,19 @@ export default function SignupPage() {
 
   return (
     <>
-        <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen" suppressHydrationWarning>
-        <div className="flex items-center justify-center py-12">
-                <div className="mx-auto grid w-[350px] gap-6">
-                    <div className="grid gap-2 text-center">
-                        <div className="flex justify-center items-center gap-2 mb-2">
-                          <Logo className="h-8 w-8 text-primary" />
-                          <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
-                        </div>
-                        <h1 className="text-3xl font-bold">Create an account</h1>
-                        <p className="text-balance text-muted-foreground">
-                        Enter your information to create a new Canara Bank account.
-                        </p>
+        <div className="flex min-h-screen items-center justify-center bg-background p-4" suppressHydrationWarning>
+            <Card className="w-full max-w-md shadow-2xl">
+                <CardHeader className="text-center">
+                    <div className="flex justify-center items-center gap-2 mb-4">
+                        <Logo className="h-8 w-8 text-primary" />
+                        <span className="text-xl font-semibold tracking-tight">Canara Bank</span>
                     </div>
+                    <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
+                    <CardDescription className="text-balance">
+                        Enter your information to create a new Canara Bank account.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
                     <form ref={formRef} onSubmit={handleInitiateSignup} className="grid gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="full-name">Full name</Label>
@@ -242,18 +249,8 @@ export default function SignupPage() {
                             Sign in
                         </Link>
                     </div>
-                </div>
-        </div>
-        <div className="hidden bg-muted lg:block">
-                <Image
-                    src="https://placehold.co/1080x1920.png"
-                    alt="Image"
-                    width="1920"
-                    height="1080"
-                    data-ai-hint="fintech app mobile"
-                    className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-                />
-            </div>
+                </CardContent>
+            </Card>
         </div>
 
         {/* CAPTCHA Dialog */}
