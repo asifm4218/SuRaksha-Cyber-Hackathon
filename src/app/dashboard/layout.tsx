@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ArrowRightLeft,
   Bell,
@@ -120,19 +120,32 @@ export default function DashboardLayout({
     { href: `/dashboard/settings?email=${email}`, icon: Settings, label: "Settings" },
   ];
 
+  const handleSignOut = () => {
+    setIsIdleDialogOpen(false);
+    setIsBehaviorAlertDialogOpen(false); // Also close the behavior dialog if open
+    router.push('/signin');
+  };
+
   const handleIdle = () => {
     setIsIdleDialogOpen(true);
     handleSessionTimeout(); // Log server-side event if any
-    // The actual redirect will be handled by the dialog's button
   };
 
-  useIdle({ onIdle: handleIdle, idleTime: 60 });
+  const { reset: resetIdleTimer } = useIdle({ onIdle: handleIdle, idleTime: 60 });
 
-  const handleReturnToSignIn = () => {
+  const handleContinueSession = () => {
     setIsIdleDialogOpen(false);
-    setIsBehaviorAlertDialogOpen(false);
-    router.push('/signin');
+    resetIdleTimer();
   }
+  
+  const handleIdleDialogChange = (open: boolean) => {
+    // If the dialog is being closed by any means other than the "Continue Session" button,
+    // (e.g., 'X' button, Escape key), we force a sign-out.
+    if (!open) {
+      handleSignOut();
+    }
+  }
+
 
   return (
     <>
@@ -286,27 +299,30 @@ export default function DashboardLayout({
     </div>
 
     {/* Idle Session Timeout Dialog */}
-    <Dialog open={isIdleDialogOpen} onOpenChange={setIsIdleDialogOpen}>
-        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+    <Dialog open={isIdleDialogOpen} onOpenChange={handleIdleDialogChange}>
+        <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <div className="flex flex-col items-center text-center">
                     <Timer className="h-16 w-16 text-primary mb-4" />
-                    <DialogTitle className="text-2xl">Session Timed Out</DialogTitle>
+                    <DialogTitle className="text-2xl">Are you still there?</DialogTitle>
                 </div>
                 <DialogDescription className="text-center py-4">
-                    For your security, you have been logged out due to inactivity.
+                    For your security, your session will time out soon due to inactivity.
                 </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
-                <Button onClick={handleReturnToSignIn} className="w-full">
-                    Return to Sign In
+            <DialogFooter className="grid grid-cols-2 gap-4">
+                <Button onClick={handleSignOut} variant="outline" className="w-full">
+                    Sign Out
+                </Button>
+                <Button onClick={handleContinueSession} className="w-full">
+                    Continue Session
                 </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
 
     {/* Behavioral Anomaly Dialog */}
-    <Dialog open={isBehaviorAlertDialogOpen} onOpenChange={setIsBehaviorAlertDialogOpen}>
+    <Dialog open={isBehaviorAlertDialogOpen} onOpenChange={(open) => !open && handleSignOut()}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
                  <div className="flex flex-col items-center text-center">
@@ -318,7 +334,7 @@ export default function DashboardLayout({
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-                <Button onClick={handleReturnToSignIn} className="w-full">
+                <Button onClick={handleSignOut} className="w-full">
                     Return to Sign In
                 </Button>
             </DialogFooter>
