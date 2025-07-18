@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 
 export function Logo({ className, ...props }: React.SVGProps<SVGSVGElement> & { className?: string }) {
