@@ -271,11 +271,10 @@ export async function handleForgotPassword(email: string) {
 }
 
 export async function handleSessionTimeout() {
-    await sendNotificationEmail({
-        to: "analyst@canara.co",
-        subject: "Security Alert: Session Timeout",
-        body: "<h1>Security Alert</h1><p>For your protection, your Canara Bank session has been automatically terminated due to inactivity.</p>"
-    });
+    // This function can now be simplified or repurposed.
+    // The main notification logic is now handled client-side in the dialog.
+    // We could still log a server-side event here if needed.
+    console.log("Server-side session timeout handler triggered.");
 }
 
 export async function getUserDetails(email: string): Promise<UserCredentials | null> {

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface UseIdleOptions {
   onIdle: () => void;
@@ -11,12 +11,12 @@ interface UseIdleOptions {
 export function useIdle({ onIdle, idleTime }: UseIdleOptions) {
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(onIdle, idleTime * 1000);
-  };
+  }, [onIdle, idleTime]);
 
   useEffect(() => {
     const events = ['mousemove', 'keydown', 'touchstart', 'scroll'];
@@ -39,7 +39,7 @@ export function useIdle({ onIdle, idleTime }: UseIdleOptions) {
         window.removeEventListener(event, handleEvent);
       });
     };
-  }, [onIdle, idleTime]);
+  }, [resetTimer]);
 
-  return {};
+  return { reset: resetTimer };
 }

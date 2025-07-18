@@ -14,7 +14,8 @@ import {
   Settings,
   ShieldAlert,
   UserCircle,
-  Wallet
+  Wallet,
+  Timer
 } from "lucide-react";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { cn } from "@/lib/utils";
@@ -120,16 +121,21 @@ export default function DashboardLayout({
   ];
 
   const handleIdle = () => {
-    handleSessionTimeout();
     setIsIdleDialogOpen(true);
   };
 
-  useIdle({ onIdle: handleIdle, idleTime: 60 });
+  const { reset: resetIdleTimer } = useIdle({ onIdle: handleIdle, idleTime: 60 });
 
   const handleLogout = () => {
+    handleSessionTimeout();
     setIsIdleDialogOpen(false);
     setIsBehaviorAlertDialogOpen(false);
-    router.push('/');
+    router.push('/signin');
+  }
+
+  const handleContinueSession = () => {
+    setIsIdleDialogOpen(false);
+    resetIdleTimer();
   }
 
   return (
@@ -288,16 +294,19 @@ export default function DashboardLayout({
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <div className="flex flex-col items-center text-center">
-                    <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-                    <DialogTitle className="text-2xl">Session Terminated for Security</DialogTitle>
+                    <Timer className="h-16 w-16 text-primary mb-4" />
+                    <DialogTitle className="text-2xl">Are you still there?</DialogTitle>
                 </div>
                 <DialogDescription className="text-center py-4">
-                    For your protection, your session has been automatically ended due to a prolonged period of inactivity. This is an adaptive security measure to prevent unauthorized access.
+                    For your security, you will be logged out due to inactivity. Click "Continue Session" to stay logged in.
                 </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
-                <Button onClick={handleLogout} className="w-full">
-                    Return to Sign In
+            <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
+                <Button onClick={handleLogout} variant="secondary" className="w-full sm:w-auto">
+                    Sign Out
+                </Button>
+                <Button onClick={handleContinueSession} className="w-full sm:w-auto">
+                    Continue Session
                 </Button>
             </DialogFooter>
         </DialogContent>
