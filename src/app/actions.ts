@@ -10,6 +10,9 @@ import { createUser, findUserByEmail, type UserCredentials, storeUserCredential,
 import { readTransactions, writeTransactions } from "@/services/transaction-service";
 import { randomBytes } from 'crypto';
 import type { Transaction } from "@/lib/mock-data";
+import { logFirebaseEvent, setFirebaseUser, setFirebaseUserProperties } from "@/services/firebase";
+import { sessionManager } from "@/services/session-service";
+import type { BehaviorMetrics } from "@/services/behavior-tracking-service";
 
 export interface CaptchaOutput {
   imageUrl: string;
@@ -141,14 +144,13 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
     try {
         const user = await findUserByEmail(email);
         if (!user) {
+            logFirebaseEvent("login_failure", { method: "biometric", reason: "profile_not_found" });
             return { success: false, message: "Biometric profile not found." };
         }
         
         console.log("Simulating verification of authentication data for user:", email);
         console.log("Received verification data:", verificationData);
 
-        // This is where you would get the challenge from the browser's WebAuthn API
-        // And then send it to the Genkit flow for analysis
         const simulatedWebAuthnData = {
           challenge: verificationData.challenge || "server-generated-random-string",
           userHandle: user.email,
@@ -160,6 +162,12 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
         const result = await verifyBiometrics(simulatedWebAuthnData);
 
         if (result.success) {
+            logFirebaseEvent("login_success", { method: "biometric" });
+            logFirebaseEvent("mfa_completed", { method: "biometric" });
+            setFirebaseUser(user.email);
+            setFirebaseUserProperties({ account_type: "premium", user_tier: "gold" });
+            sessionManager.createSession(email);
+
             await sendNotificationEmail({
                 to: user.email,
                 subject: "Successful Biometric Sign-In",
@@ -167,11 +175,13 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
             });
             return { ...result, user };
         } else {
+             logFirebaseEvent("login_failure", { method: "biometric", reason: "verification_failed" });
             return { success: false, message: result.message, user: undefined };
         }
 
     } catch (error) {
         console.error("Error verifying biometrics:", error);
+        logFirebaseEvent("login_failure", { method: "biometric", reason: "exception" });
         return {
             success: false,
             message: "An error occurred during biometric verification."
@@ -184,12 +194,19 @@ export async function verifyBiometricLogin(email: string, verificationData: any)
 export async function handleLogin(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
     const user = await findUserByEmail(credentials.email);
     if (!user) {
+        logFirebaseEvent("login_failure", { method: "password", reason: "user_not_found" });
         return { success: false, message: "User not found. Please sign up." };
     }
 
     if (user.password !== credentials.password) {
+        logFirebaseEvent("login_failure", { method: "password", reason: "invalid_password" });
         return { success: false, message: "Invalid email or password." };
     }
+    
+    logFirebaseEvent("login_success", { method: "password" });
+    setFirebaseUser(user.email);
+    setFirebaseUserProperties({ account_type: "standard", user_tier: "silver" });
+    sessionManager.createSession(credentials.email);
 
     await sendNotificationEmail({
         to: user.email,
@@ -205,11 +222,12 @@ export async function verifyMpin(email: string, mpin: string): Promise<boolean> 
     if (!user) {
         return false;
     }
-    // In a real app, MPIN would be hashed and compared securely.
-    // For this prototype, we'll do a simple string comparison.
-    // We are also keeping a fallback for the default user.
     const expectedMpin = user.mpin || "180805";
-    return user.mpin === mpin || mpin === "180805";
+    const isValid = user.mpin === mpin || mpin === "180805";
+    if (isValid) {
+        logFirebaseEvent("mfa_completed", { method: "mpin" });
+    }
+    return isValid;
 }
 
 
@@ -217,7 +235,6 @@ export async function verifyMpin(email: string, mpin: string): Promise<boolean> 
 
 export async function getTransactions(): Promise<Transaction[]> {
     const transactions = await readTransactions();
-    // Return transactions sorted by date, most recent first
     return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
@@ -225,6 +242,8 @@ export async function addTransaction(
     newTransactionData: Omit<Transaction, 'id' | 'date' | 'status'>
 ): Promise<{ success: boolean; newTransaction?: Transaction }> {
     try {
+        logFirebaseEvent("transaction_initiated", { type: newTransactionData.type, amount: newTransactionData.amount });
+        
         const transactions = await readTransactions();
         
         const newTransaction: Transaction = {
@@ -234,12 +253,14 @@ export async function addTransaction(
             ...newTransactionData,
         };
 
-        transactions.unshift(newTransaction); // Add to the beginning of the list
+        transactions.unshift(newTransaction);
         await writeTransactions(transactions);
-
+        
+        logFirebaseEvent("transaction_completed", { type: newTransaction.type, amount: newTransaction.amount });
         return { success: true, newTransaction };
     } catch (error) {
         console.error("Failed to add transaction:", error);
+        logFirebaseEvent("transaction_failed", { type: newTransactionData.type, amount: newTransactionData.amount, reason: "exception" });
         return { success: false };
     }
 }
@@ -248,12 +269,18 @@ export async function addTransaction(
 // === Other Actions ===
 
 export async function handleSignup(credentials: UserCredentials): Promise<{ success: boolean, message: string, user?: UserCredentials }> {
+    logFirebaseEvent("registration_start");
     const existingUser = await findUserByEmail(credentials.email);
     if (existingUser) {
+        logFirebaseEvent("registration_abandon", { reason: "email_exists" });
         return { success: false, message: "An account with this email already exists." };
     }
 
     const newUser = await createUser(credentials);
+    
+    // Simulate KYC success
+    logFirebaseEvent("kyc_upload");
+    logFirebaseEvent("kyc_success");
 
     await sendNotificationEmail({
         to: credentials.email,
@@ -291,14 +318,12 @@ async function sendNotificationEmail(input: SendEmailNotificationInput) {
     await sendEmailNotification(input);
   } catch (error) {
     console.error("Error sending notification email:", error);
-    // In a real app, you might have more robust error handling or fallback mechanisms.
   }
 }
 
 // === CAPTCHA Action ===
-// Generates a random alphanumeric string
 const generateRandomString = (length: number) => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
     for (let i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -306,25 +331,22 @@ const generateRandomString = (length: number) => {
     return result;
 };
 
-// Generates an SVG CAPTCHA image
 const generateCaptchaSvg = (text: string) => {
   const width = 300;
   const height = 100;
   let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="background-color: #f0f1f3;">`;
   
-  // Add noise lines
-  for (let i = 0; i < 5; i++) {
-    svg += `<line x1="${Math.random() * width}" y1="${Math.random() * height}" x2="${Math.random() * width}" y2="${Math.random() * height}" stroke="#ccc" stroke-width="2"/>`;
+  for (let i = 0; i < 8; i++) {
+    svg += `<line x1="${Math.random() * width}" y1="${Math.random() * height}" x2="${Math.random() * width}" y2="${Math.random() * height}" stroke="#bbb" stroke-width="${Math.random() * 2 + 1}"/>`;
   }
   
-  // Add text with distortion
   const textX = width / 2;
   const textY = height / 2;
-  svg += `<text x="${textX}" y="${textY}" font-family="Arial, sans-serif" font-size="50" fill="#333" text-anchor="middle" dominant-baseline="middle" style="letter-spacing: 15px; font-weight: bold;">`;
+  svg += `<text x="${textX}" y="${textY}" font-family="Arial, sans-serif" font-size="55" fill="#333" text-anchor="middle" dominant-baseline="middle" style="letter-spacing: 12px; font-weight: bold;">`;
   
   for (let i = 0; i < text.length; i++) {
-    const rotate = Math.random() * 40 - 20; // -20 to +20 degrees
-    const dy = Math.random() * 20 - 10; // -10 to +10 pixels vertical shift
+    const rotate = Math.random() * 50 - 25;
+    const dy = Math.random() * 20 - 10;
     svg += `<tspan rotate="${rotate}" dy="${dy}">${text[i]}</tspan>`;
   }
   
@@ -345,10 +367,63 @@ export async function getCaptchaChallenge(): Promise<CaptchaOutput> {
         };
     } catch (error) {
         console.error("Error generating CAPTCHA challenge:", error);
-        // Fallback in case of an error
         return {
             imageUrl: 'https://placehold.co/300x100/ccc/333.png?text=Error',
             correctText: 'error',
         };
     }
+}
+
+
+// === Behavioral Anomaly Detection Action ===
+
+export async function analyzeBehavioralMetrics(email: string, metrics: BehaviorMetrics): Promise<{ status: 'ok' | 'anomaly' }> {
+    const session = sessionManager.getSession(email);
+    if (!session) {
+        console.warn(`No session found for ${email}. Cannot analyze metrics.`);
+        return { status: 'ok' };
+    }
+
+    const { baseline } = session;
+    const { typingSpeedWPM, backspaceCount, avgKeyHoldDuration } = metrics;
+    let anomalyDetected = false;
+
+    // Compare with baseline if enough data has been collected
+    if (typingSpeedWPM > 0 && baseline.wpm > 0) {
+        const wpmDeviation = Math.abs(typingSpeedWPM - baseline.wpm) / baseline.wpm;
+        if (wpmDeviation > 0.30) {
+            console.log(`ANOMALY: WPM deviation of ${wpmDeviation.toFixed(2) * 100}% detected for ${email}.`);
+            anomalyDetected = true;
+        }
+    }
+
+    if (avgKeyHoldDuration > 0 && baseline.avg_hold > 0) {
+        const holdDeviation = Math.abs(avgKeyHoldDuration - baseline.avg_hold) / baseline.avg_hold;
+        if (holdDeviation > 0.25) {
+            console.log(`ANOMALY: Key hold duration deviation of ${holdDeviation.toFixed(2) * 100}% detected for ${email}.`);
+            anomalyDetected = true;
+        }
+    }
+    
+    // Check backspace deviation (more lenient for initial typing)
+    if (backspaceCount > 5 && baseline.backspaces > 0) {
+        const backspaceDeviation = Math.abs(backspaceCount - baseline.backspaces) / (baseline.backspaces + 1); // Avoid division by zero
+        if (backspaceDeviation > 0.50) {
+            console.log(`ANOMALY: Backspace count deviation of ${backspaceDeviation.toFixed(2) * 100}% detected for ${email}.`);
+            anomalyDetected = true;
+        }
+    }
+
+    if (anomalyDetected) {
+        sessionManager.expireSession(email);
+        logFirebaseEvent("security_alert", { reason: "behavioral_anomaly" });
+        await sendNotificationEmail({
+            to: email,
+            subject: "Security Alert: Unusual Account Activity Detected",
+            body: "<h1>Security Alert</h1><p>Our systems detected unusual behavior on your account and your session was terminated as a precaution. If this was not you, please secure your account immediately.</p>"
+        });
+        return { status: 'anomaly' };
+    }
+
+    return { status: 'ok' };
 }

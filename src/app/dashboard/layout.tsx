@@ -42,13 +42,12 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIdle } from "@/hooks/use-idle";
-import { handleSessionTimeout } from "@/app/actions";
+import { handleSessionTimeout, analyzeBehavioralMetrics } from "@/app/actions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BehaviorTracker } from "@/services/behavior-tracking-service";
-
+import { BehaviorTracker, type BehaviorMetrics } from "@/services/behavior-tracking-service";
+import { sessionManager } from "@/services/session-service";
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -69,31 +68,43 @@ export default function DashboardLayout({
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
   const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
-  const [isReportOpen, setIsReportOpen] = useState(false);
-  const [reportData, setReportData] = useState<any>(null);
+  const [isBehaviorAlertDialogOpen, setIsBehaviorAlertDialogOpen] = useState(false);
   const isMobile = useIsMobile();
-
+  
+  // Initialize and run the behavioral analysis
   useEffect(() => {
-    const tracker = new BehaviorTracker((data) => {
-        setReportData(data);
-        setIsReportOpen(true);
-    });
+    if (!email) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            e.preventDefault();
+    let analysisInterval: NodeJS.Timeout;
+
+    const tracker = new BehaviorTracker(email);
+    tracker.start();
+
+    // This listener will react to changes in the session status
+    const handleSessionStatusChange = (status: 'active' | 'expired') => {
+        if (status === 'expired') {
+            setIsBehaviorAlertDialogOpen(true);
             tracker.stop();
+            if(analysisInterval) clearInterval(analysisInterval);
         }
     };
+    sessionManager.subscribe(handleSessionStatusChange);
 
-    tracker.start();
-    window.addEventListener('keydown', handleKeyDown);
+    // Periodically send data to the "backend" for analysis
+    analysisInterval = setInterval(async () => {
+        const metrics = tracker.getMetrics();
+        if (metrics.typingSpeedWPM > 0 || metrics.keyHoldDurations.length > 0) {
+            await analyzeBehavioralMetrics(email, metrics);
+        }
+    }, 3000); // Analyze every 3 seconds
 
     return () => {
-        tracker.stop();
-        window.removeEventListener('keydown', handleKeyDown);
+      tracker.stop();
+      sessionManager.unsubscribe(handleSessionStatusChange);
+      if (analysisInterval) clearInterval(analysisInterval);
     };
-  }, []);
+  }, [email]);
+
 
   const navItems = [
     { href: `/dashboard?email=${email}`, icon: LayoutGrid, label: "Dashboard" },
@@ -116,6 +127,7 @@ export default function DashboardLayout({
 
   const handleLogout = () => {
     setIsIdleDialogOpen(false);
+    setIsBehaviorAlertDialogOpen(false);
     router.push('/');
   }
 
@@ -265,6 +277,7 @@ export default function DashboardLayout({
       </div>
     </div>
 
+    {/* Idle Session Timeout Dialog */}
     <Dialog open={isIdleDialogOpen} onOpenChange={setIsIdleDialogOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -284,51 +297,24 @@ export default function DashboardLayout({
         </DialogContent>
     </Dialog>
 
-    <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Behavioral Biometrics Report</DialogTitle>
-          <DialogDescription>
-            This is a real-time summary of the behavioral data collected during your session. Press Esc to generate.
-          </DialogDescription>
-        </DialogHeader>
-        {reportData && (
-          <ScrollArea className="max-h-[60vh] pr-6">
-            <div className="grid gap-4 py-4 text-sm">
-                <div className="grid grid-cols-2 gap-4">
-                    <p><strong>Session Duration:</strong> {reportData.sessionDuration}</p>
-                    <p><strong>Typing Speed:</strong> {reportData.typingSpeedWPM} WPM</p>
-                    <p><strong>Corrections (Backspaces):</strong> {reportData.mistakes}</p>
+    {/* Behavioral Anomaly Dialog */}
+    <Dialog open={isBehaviorAlertDialogOpen} onOpenChange={setIsBehaviorAlertDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                 <div className="flex flex-col items-center text-center">
+                    <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
+                    <DialogTitle className="text-2xl">Session Expired Due to Unusual Behavior</DialogTitle>
                 </div>
-                <div>
-                    <h4 className="font-semibold mb-2">Mouse Movements (last 100):</h4>
-                    <pre className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
-                        <code>{JSON.stringify(reportData.mouseMovements.slice(-100), null, 2)}</code>
-                    </pre>
-                </div>
-                 <div>
-                    <h4 className="font-semibold mb-2">Mouse Clicks:</h4>
-                    <pre className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
-                        <code>{JSON.stringify(reportData.clicks, null, 2)}</code>
-                    </pre>
-                </div>
-                 <div>
-                    <h4 className="font-semibold mb-2">Key Hold Durations (last 10):</h4>
-                    <pre className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
-                        <code>{JSON.stringify(reportData.keyHoldDurations.slice(-10), null, 2)}</code>
-                    </pre>
-                </div>
-                 <div>
-                    <h4 className="font-semibold mb-2">Text Typed:</h4>
-                    <p className="bg-muted p-2 rounded-md text-xs break-words">{reportData.finalText || "(None)"}</p>
-                </div>
-            </div>
-          </ScrollArea>
-        )}
-        <DialogFooter>
-          <Button onClick={() => setIsReportOpen(false)}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
+                <DialogDescription className="text-center py-4">
+                    Our security system detected interaction patterns that do not match your profile. For your protection, your session has been terminated. Please sign in again.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+                <Button onClick={handleLogout} className="w-full">
+                    Return to Sign In
+                </Button>
+            </DialogFooter>
+        </DialogContent>
     </Dialog>
     </>
   );

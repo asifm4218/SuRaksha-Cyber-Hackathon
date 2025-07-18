@@ -1,3 +1,4 @@
+
 "use client";
 
 import { initializeApp, getApps } from "firebase/app";
@@ -17,15 +18,17 @@ const firebaseConfig = {
 };
 
 let analytics: Analytics | undefined;
+let isInitialized = false;
 
 function initializeFirebase() {
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && !isInitialized) {
     if (getApps().length === 0) {
       const app = initializeApp(firebaseConfig);
       // Only initialize Analytics if the config is not a placeholder
       if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
         analytics = getAnalytics(app);
       }
+      isInitialized = true;
     }
   }
 }
@@ -47,7 +50,19 @@ export function logFirebaseEvent(eventName: string, eventParams?: EventParams) {
 }
 
 /**
- * Sets user properties for Firebase Analytics.
+ * Sets the user for Firebase Analytics.
+ * @param email The user's unique email or ID.
+ */
+export function setFirebaseUser(email: string | null) {
+  if (!analytics) {
+    console.log("Firebase Analytics not initialized. User not set.");
+    return;
+  }
+  setUserId(analytics, email || 'anonymous');
+}
+
+/**
+ * Sets user properties for Firebase Analytics for audience segmentation.
  * @param properties An object of user properties.
  */
 export function setFirebaseUserProperties(properties: { [key: string]: string }) {
@@ -56,16 +71,4 @@ export function setFirebaseUserProperties(properties: { [key: string]: string })
         return;
     }
     setUserProperties(analytics, properties);
-}
-
-/**
- * Sets the user ID for all subsequent events.
- * @param userId The unique ID of the user.
- */
-export function setFirebaseUserId(userId: string) {
-    if (!analytics) {
-        console.log("Firebase Analytics not initialized. User ID not set.");
-        return;
-    }
-    setUserId(analytics, userId);
 }

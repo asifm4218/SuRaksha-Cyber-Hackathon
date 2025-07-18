@@ -1,50 +1,51 @@
 
 // A client-side service to track user behavior for security analysis.
-// This is not a server action. It runs entirely in the browser.
+// This runs entirely in the browser.
 
-interface TypingData {
-    startTime: number | null;
-    endTime: number | null;
-    keyPresses: { key: string; timestamp: number }[];
-    keyReleases: { key: string; timestamp: number; holdDuration: number }[];
+export interface BehaviorMetrics {
+    typingSpeedWPM: number;
     backspaceCount: number;
-    wordCount: number;
-    text: string;
-}
-
-interface MouseData {
-    movements: { x: number; y: number; timestamp: number }[];
-    clicks: { x: number; y: number; timestamp: number; pressure?: number }[];
+    avgKeyHoldDuration: number;
+    keyHoldDurations: { key: string; duration: number }[];
+    mouseMovements: { x: number; y: number; timestamp: number }[];
 }
 
 export class BehaviorTracker {
-    private typingData: TypingData;
-    private mouseData: MouseData;
-    private keyPressTimestamps: Map<string, number> = new Map();
-    private onReport: (data: any) => void;
+    private userId: string;
     private isTracking: boolean = false;
-    private activeElement: HTMLElement | null = null;
+    private keyPressTimestamps: Map<string, number> = new Map();
+    
+    // Internal state for metrics
+    private metrics: BehaviorMetrics = {
+        typingSpeedWPM: 0,
+        backspaceCount: 0,
+        avgKeyHoldDuration: 0,
+        keyHoldDurations: [],
+        mouseMovements: [],
+    };
+    
+    // Internal data for calculations
+    private startTime: number | null = null;
+    private totalWords: number = 0;
+    private currentText: string = "";
 
-    constructor(onReport: (data: any) => void) {
-        this.onReport = onReport;
-        this.reset();
+    constructor(userId: string) {
+        this.userId = userId;
+        console.log(`BehaviorTracker initialized for user: ${this.userId}`);
     }
 
     private reset() {
-        this.typingData = {
-            startTime: null,
-            endTime: null,
-            keyPresses: [],
-            keyReleases: [],
+        this.metrics = {
+            typingSpeedWPM: 0,
             backspaceCount: 0,
-            wordCount: 0,
-            text: "",
-        };
-        this.mouseData = {
-            movements: [],
-            clicks: [],
+            avgKeyHoldDuration: 0,
+            keyHoldDurations: [],
+            mouseMovements: [],
         };
         this.keyPressTimestamps.clear();
+        this.startTime = Date.now();
+        this.totalWords = 0;
+        this.currentText = "";
     }
 
     public start() {
@@ -52,132 +53,105 @@ export class BehaviorTracker {
         this.isTracking = true;
         this.reset();
         
-        window.addEventListener('focusin', this.handleFocusIn);
-        window.addEventListener('focusout', this.handleFocusOut);
-        window.addEventListener('mousemove', this.handleMouseMove);
-        window.addEventListener('click', this.handleMouseClick);
+        window.addEventListener('keydown', this.handleKeyDown, true);
+        window.addEventListener('keyup', this.handleKeyUp, true);
+        window.addEventListener('mousemove', this.handleMouseMove, true);
         
-        this.typingData.startTime = Date.now();
+        console.log("Behavior tracking started.");
     }
 
     public stop() {
         if (!this.isTracking) return;
         this.isTracking = false;
         
-        this.detachTypingListeners();
-        window.removeEventListener('focusin', this.handleFocusIn);
-        window.removeEventListener('focusout', this.handleFocusOut);
-        window.removeEventListener('mousemove', this.handleMouseMove);
-        window.removeEventListener('click', this.handleMouseClick);
-
-        this.typingData.endTime = Date.now();
-        this.generateReport();
-    }
-
-    private handleFocusIn = (e: FocusEvent) => {
-        const target = e.target as HTMLElement;
-        if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-            this.activeElement = target;
-            this.attachTypingListeners();
-        }
-    }
-
-    private handleFocusOut = (e: FocusEvent) => {
-        const target = e.target as HTMLElement;
-        if (this.activeElement === target) {
-            this.activeElement = null;
-            this.detachTypingListeners();
-        }
-    }
-
-    private attachTypingListeners() {
-        window.addEventListener('keydown', this.handleKeyDown);
-        window.addEventListener('keyup', this.handleKeyUp);
-    }
-    
-    private detachTypingListeners() {
-        window.removeEventListener('keydown', this.handleKeyDown);
-        window.removeEventListener('keyup', this.handleKeyUp);
+        window.removeEventListener('keydown', this.handleKeyDown, true);
+        window.removeEventListener('keyup', this.handleKeyUp, true);
+        window.removeEventListener('mousemove', this.handleMouseMove, true);
+        
+        console.log("Behavior tracking stopped.");
+        this.calculateFinalMetrics();
     }
 
     private handleKeyDown = (e: KeyboardEvent) => {
-        if (this.typingData.startTime === null) {
-            this.typingData.startTime = Date.now();
+        if (!this.isTracking) return;
+
+        if (this.startTime === null) {
+            this.startTime = Date.now();
         }
 
         if (!this.keyPressTimestamps.has(e.key)) {
-            const timestamp = Date.now();
-            this.keyPressTimestamps.set(e.key, timestamp);
-            this.typingData.keyPresses.push({ key: e.key, timestamp });
+            this.keyPressTimestamps.set(e.key, Date.now());
         }
 
         if (e.key === 'Backspace') {
-            this.typingData.backspaceCount++;
-            if (this.typingData.text.length > 0) {
-               this.typingData.text = this.typingData.text.slice(0, -1);
+            this.metrics.backspaceCount++;
+            if (this.currentText.length > 0) {
+               this.currentText = this.currentText.slice(0, -1);
             }
         }
     };
 
     private handleKeyUp = (e: KeyboardEvent) => {
+        if (!this.isTracking) return;
+
         const pressTime = this.keyPressTimestamps.get(e.key);
         if (pressTime) {
             const releaseTime = Date.now();
             const holdDuration = releaseTime - pressTime;
-            this.typingData.keyReleases.push({ key: e.key, timestamp: releaseTime, holdDuration });
+            this.metrics.keyHoldDurations.push({ key: e.key, duration: holdDuration });
             this.keyPressTimestamps.delete(e.key);
-
-            if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/)) { 
-                this.typingData.text += e.key;
-            } else if (e.key === ' ') {
-                this.typingData.text += ' ';
-            }
-
-            if (/\s/.test(e.key) || e.key === 'Enter') {
-                this.typingData.wordCount = this.typingData.text.trim().split(/\s+/).filter(Boolean).length;
-            }
         }
+
+        // Add character to our tracked text
+        if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/)) {
+            this.currentText += e.key;
+        } else if (e.key === ' ') {
+            this.currentText += ' ';
+        }
+        
+        this.calculateLiveMetrics();
     };
 
     private handleMouseMove = throttle((e: MouseEvent) => {
-        this.mouseData.movements.push({ x: e.clientX, y: e.clientY, timestamp: Date.now() });
-    }, 50); 
+        if (!this.isTracking) return;
+        this.metrics.mouseMovements.push({ x: e.clientX, y: e.clientY, timestamp: Date.now() });
+        // Keep only the last 200 movements for performance
+        if (this.metrics.mouseMovements.length > 200) {
+            this.metrics.mouseMovements.shift();
+        }
+    }, 100); 
 
-    private handleMouseClick = (e: MouseEvent) => {
-        this.mouseData.clicks.push({ x: e.clientX, y: e.clientY, timestamp: Date.now() });
-    };
+    private calculateLiveMetrics() {
+        if (!this.startTime) return;
 
-    private generateReport() {
-        const durationSeconds = this.typingData.endTime && this.typingData.startTime 
-            ? (this.typingData.endTime - this.typingData.startTime) / 1000 
-            : 0;
-            
-        const durationMinutes = durationSeconds / 60;
+        // Calculate WPM
+        const durationMinutes = (Date.now() - this.startTime) / (1000 * 60);
+        this.totalWords = this.currentText.trim().split(/\s+/).filter(Boolean).length;
+        this.metrics.typingSpeedWPM = durationMinutes > 0 ? this.totalWords / durationMinutes : 0;
         
-        const wpm = durationMinutes > 0 ? this.typingData.wordCount / durationMinutes : 0;
+        // Calculate average key hold duration
+        if (this.metrics.keyHoldDurations.length > 0) {
+            const totalHoldTime = this.metrics.keyHoldDurations.reduce((acc, curr) => acc + curr.duration, 0);
+            this.metrics.avgKeyHoldDuration = totalHoldTime / this.metrics.keyHoldDurations.length;
+        }
+    }
+    
+    private calculateFinalMetrics() {
+        this.calculateLiveMetrics(); // Ensure all metrics are up-to-date
+    }
 
-        const report = {
-            sessionDuration: `${durationSeconds.toFixed(2)} seconds`,
-            typingSpeedWPM: wpm.toFixed(2),
-            mistakes: this.typingData.backspaceCount,
-            keyHoldDurations: this.typingData.keyReleases.map(r => ({ key: r.key, duration: `${r.holdDuration}ms` })),
-            mouseMovements: this.mouseData.movements.map(m => `(${m.x}, ${m.y})`),
-            clicks: this.mouseData.clicks.map(c => `(${c.x}, ${c.y})`),
-            finalText: this.typingData.text,
-        };
-        
-        this.onReport(report);
+    public getMetrics(): BehaviorMetrics {
+        // Return a copy of the current metrics
+        return { ...this.metrics };
     }
 }
 
 
 function throttle(func: (...args: any[]) => void, limit: number) {
   let inThrottle: boolean;
-  return function(this: any) {
-    const args = arguments;
-    const context = this;
+  return function(this: any, ...args: any[]) {
     if (!inThrottle) {
-      func.apply(context, args);
+      func.apply(this, args);
       inThrottle = true;
       setTimeout(() => inThrottle = false, limit);
     }
