@@ -195,7 +195,7 @@ export default function SignupPage() {
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="mpin">6-Digit MPIN</Label>
-                            <Input id="mpin" name="mpin" type="password" inputMode="numeric" maxLength={6} placeholder="******" required />
+                            <Input id="mpin" name="mpin" type="password" inputMode="numeric" maxLength={6} placeholder="Enter MPIN" required />
                         </div>
                         <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
                             {isLoading ? <LoaderCircle className="animate-spin mr-2" /> : 'Create account'}
