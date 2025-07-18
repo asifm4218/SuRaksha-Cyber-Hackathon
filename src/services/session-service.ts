@@ -6,33 +6,19 @@
 
 interface UserSession {
     session_status: 'active' | 'expired';
-    baseline: {
-        avg_hold: number;
-        wpm: number;
-        backspaces: number;
-    };
+    reason?: string;
 }
 
-type SessionListener = (status: 'active' | 'expired') => void;
+type SessionListener = (status: 'active' | 'expired', reason?: string) => void;
 
 class SessionManager {
     private sessions: Map<string, UserSession> = new Map();
     private listeners: Map<string, SessionListener[]> = new Map();
 
-    // Default baseline for new users or users with no history.
-    private readonly defaultBaseline = {
-        avg_hold: 85, // milliseconds
-        wpm: 65,      // words per minute
-        backspaces: 5 // a nominal starting value
-    };
-
     public createSession(userId: string): void {
         console.log(`Creating new session for ${userId}`);
         this.sessions.set(userId, {
             session_status: 'active',
-            // In a real app, you'd fetch this baseline from the user's history in Firestore.
-            // For this simulation, we use a default baseline.
-            baseline: { ...this.defaultBaseline }
         });
         this.notifyListeners(userId, 'active');
     }
@@ -41,20 +27,23 @@ class SessionManager {
         return this.sessions.get(userId);
     }
 
-    public expireSession(userId: string): void {
+    public expireSession(userId: string, reason?: string): void {
         const session = this.sessions.get(userId);
         if (session && session.session_status === 'active') {
-            console.log(`Session for ${userId} expired due to anomaly.`);
+            console.log(`Session for ${userId} expired due to anomaly. Reason: ${reason}`);
             session.session_status = 'expired';
+            session.reason = reason;
             this.sessions.set(userId, session);
-            this.notifyListeners(userId, 'expired');
+            this.notifyListeners(userId, 'expired', reason);
         }
     }
 
     public subscribe(userId: string, listener: SessionListener): void {
         const userListeners = this.listeners.get(userId) || [];
-        userListeners.push(listener);
-        this.listeners.set(userId, userListeners);
+        if (!userListeners.includes(listener)) {
+            userListeners.push(listener);
+            this.listeners.set(userId, userListeners);
+        }
     }
     
     public unsubscribe(userId: string, listener: SessionListener): void {
@@ -62,11 +51,13 @@ class SessionManager {
         this.listeners.set(userId, userListeners.filter(l => l !== listener));
     }
 
-    private notifyListeners(userId: string, status: 'active' | 'expired'): void {
+    private notifyListeners(userId: string, status: 'active' | 'expired', reason?: string): void {
         const userListeners = this.listeners.get(userId) || [];
-        userListeners.forEach(l => l(status));
+        userListeners.forEach(l => l(status, reason));
     }
 }
 
 // Export a singleton instance of the session manager
 export const sessionManager = new SessionManager();
+
+    

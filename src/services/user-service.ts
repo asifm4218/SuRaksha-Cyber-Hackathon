@@ -3,6 +3,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import type { BehaviorMetrics } from './behavior-tracking-service';
 
 // THIS IS A SIMULATED DATABASE USING JSON FILES
 // In a real application, you would use a real database like Firestore.
@@ -15,9 +16,14 @@ export interface UserCredentials {
   mpin?: string;
 }
 
+export type UserBaseline = Omit<BehaviorMetrics, 'keyHoldDurations' | 'mouseMovements'>;
+
+
 const dbPath = path.join(process.cwd(), 'users.json');
 const credentialsDbPath = path.join(process.cwd(), 'credentials.json');
 const twoFactorDbPath = path.join(process.cwd(), '2fa_codes.json');
+const baselinesDbPath = path.join(process.cwd(), 'baselines.json');
+
 
 // Pre-populate with a default user for demonstration purposes
 const defaultUsers: UserCredentials[] = [
@@ -78,6 +84,20 @@ async function readTwoFactorCodes(): Promise<TwoFactorCode[]> {
 
 async function writeTwoFactorCodes(codes: TwoFactorCode[]): Promise<void> {
     await writeData(twoFactorDbPath, codes);
+}
+
+// Baseline Management
+interface StoredBaseline {
+    email: string;
+    baseline: UserBaseline;
+}
+
+async function readBaselines(): Promise<StoredBaseline[]> {
+    return readData<StoredBaseline>(baselinesDbPath);
+}
+
+async function writeBaselines(baselines: StoredBaseline[]): Promise<void> {
+    await writeData(baselinesDbPath, baselines);
 }
 
 /**
@@ -193,3 +213,32 @@ export async function getTwoFactorCode(email: string): Promise<string | null> {
 
     return null;
 }
+
+/**
+ * Saves a user's behavioral baseline.
+ * @param email The user's email.
+ * @param baseline The behavioral baseline data.
+ */
+export async function saveUserBaseline(email: string, baseline: UserBaseline): Promise<void> {
+    const baselines = await readBaselines();
+    const existingIndex = baselines.findIndex(b => b.email === email);
+    if (existingIndex > -1) {
+        baselines[existingIndex].baseline = baseline;
+    } else {
+        baselines.push({ email, baseline });
+    }
+    await writeBaselines(baselines);
+}
+
+/**
+ * Retrieves a user's behavioral baseline.
+ * @param email The user's email.
+ * @returns The user's baseline or null if not found.
+ */
+export async function getUserBaseline(email: string): Promise<UserBaseline | null> {
+    const baselines = await readBaselines();
+    const stored = baselines.find(b => b.email === email);
+    return stored ? stored.baseline : null;
+}
+
+    

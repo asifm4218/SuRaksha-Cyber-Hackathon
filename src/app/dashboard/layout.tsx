@@ -70,6 +70,7 @@ export default function DashboardLayout({
   const email = searchParams.get('email');
   const [isIdleDialogOpen, setIsIdleDialogOpen] = useState(false);
   const [isBehaviorAlertDialogOpen, setIsBehaviorAlertDialogOpen] = useState(false);
+  const [behaviorAlertReason, setBehaviorAlertReason] = useState("");
   const isMobile = useIsMobile();
   
   // Initialize and run the behavioral analysis
@@ -82,8 +83,9 @@ export default function DashboardLayout({
     tracker.start();
 
     // This listener will react to changes in the session status
-    const handleSessionStatusChange = (status: 'active' | 'expired') => {
+    const handleSessionStatusChange = (status: 'active' | 'expired', reason?: string) => {
         if (status === 'expired') {
+            setBehaviorAlertReason(reason || "Our security system detected interaction patterns that do not match your profile.");
             setIsBehaviorAlertDialogOpen(true);
             logFirebaseEvent("security_alert", { reason: "behavioral_anomaly" });
             tracker.stop();
@@ -97,12 +99,11 @@ export default function DashboardLayout({
     // Periodically send data to the "backend" for analysis
     analysisInterval = setInterval(async () => {
         const metrics = tracker.getMetrics();
-        const session = sessionManager.getSession(email);
-
-        if (session && (metrics.typingSpeedWPM > 0 || metrics.keyHoldDurations.length > 0)) {
-            const result = await analyzeBehavioralMetrics(email, metrics, session.baseline);
+        
+        if (metrics.keyHoldDurations.length > 5) { // Only analyze after some interaction
+            const result = await analyzeBehavioralMetrics(email, metrics);
             if (result.status === 'anomaly') {
-                sessionManager.expireSession(email);
+                sessionManager.expireSession(email, result.reason);
             }
         }
     }, 3000); // Analyze every 3 seconds
@@ -315,7 +316,7 @@ export default function DashboardLayout({
                     <DialogTitle className="text-2xl">Session Expired Due to Unusual Behavior</DialogTitle>
                 </div>
                 <DialogDescription className="text-center py-4">
-                    Our security system detected interaction patterns that do not match your profile. For your protection, your session has been terminated. Please sign in again.
+                   {behaviorAlertReason} For your protection, your session has been terminated. Please sign in again.
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -328,3 +329,5 @@ export default function DashboardLayout({
     </>
   );
 }
+
+    

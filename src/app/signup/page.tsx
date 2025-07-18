@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
-import { handleSignup, getRegistrationChallenge, verifyRegistration, getCaptchaChallenge } from "@/app/actions"
+import { handleSignup, getCaptchaChallenge } from "@/app/actions"
 import type { CaptchaOutput } from "@/app/actions";
 
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Smartphone, Fingerprint, LoaderCircle, ShieldCheck, RefreshCw } from "lucide-react"
-import { cn, arrayBufferToBase64Url, base64UrlToUint8Array } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     Dialog,
@@ -41,7 +41,6 @@ export default function SignupPage() {
     const { toast } = useToast()
     const formRef = useRef<HTMLFormElement>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [registerBiometrics, setRegisterBiometrics] = useState(false);
     
     const [isCaptchaOpen, setIsCaptchaOpen] = useState(false);
     const [captchaChallenge, setCaptchaChallenge] = useState<CaptchaOutput | null>(null);
@@ -94,56 +93,12 @@ export default function SignupPage() {
                 logFirebaseEvent("kyc_upload"); // Simulate
                 logFirebaseEvent("kyc_success"); // Simulate
 
-                if (registerBiometrics) {
-                    try {
-                        const challengeResponse = await getRegistrationChallenge(email, fullName);
-                        
-                        const publicKeyCredentialCreationOptions = {
-                           ...challengeResponse,
-                           challenge: base64UrlToUint8Array(challengeResponse.challenge),
-                           user: {
-                               ...challengeResponse.user,
-                               id: base64UrlToUint8Array(challengeResponse.user.id)
-                           }
-                        };
-                        
-                        const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions as any }) as any;
-
-                        const credentialForServer = {
-                          id: credential.id,
-                          rawId: arrayBufferToBase64Url(credential.rawId),
-                          response: {
-                            clientDataJSON: arrayBufferToBase64Url(credential.response.clientDataJSON),
-                            attestationObject: arrayBufferToBase64Url(credential.response.attestationObject),
-                          },
-                          type: credential.type,
-                        };
-
-                        const verificationResult = await verifyRegistration(email, credentialForServer);
-                        if (verificationResult.success) {
-                            toast({
-                                title: "Biometrics Registered!",
-                                description: "You can now sign in using your device's security features.",
-                            });
-                        } else {
-                           throw new Error("Biometric verification failed.");
-                        }
-
-                    } catch (err: any) {
-                        console.error("Biometric registration failed", err);
-                        toast({
-                            title: "Biometric Registration Failed",
-                            description: err.name === 'NotAllowedError' ? 'Registration was cancelled.' : 'Could not register biometrics.',
-                            variant: "destructive",
-                        });
-                    }
-                }
-
                 toast({
                     title: "Account Created!",
-                    description: "Your VeriSafe account has been successfully created. Please sign in to continue.",
+                    description: "Next, we'll capture your behavioral baseline for security.",
                 });
-                router.push("/signin");
+                // Redirect to the behavior capture page
+                router.push(`/signup/capture?email=${encodeURIComponent(email)}`);
 
             } else {
                 logFirebaseEvent("registration_abandon", { reason: signupResult.message });
@@ -152,10 +107,13 @@ export default function SignupPage() {
                     description: signupResult.message,
                     variant: "destructive",
                 });
+                setIsLoading(false);
+                setIsCaptchaOpen(false);
             }
+        } else {
+             setIsLoading(false);
+             setIsCaptchaOpen(false);
         }
-        setIsLoading(false);
-        setIsCaptchaOpen(false);
     }
 
   return (
@@ -196,15 +154,6 @@ export default function SignupPage() {
                         <div className="grid gap-2">
                             <Label htmlFor="mpin">6-Digit MPIN</Label>
                             <Input id="mpin" name="mpin" type="password" inputMode="numeric" maxLength={6} placeholder="******" required />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="biometrics" onCheckedChange={(checked) => setRegisterBiometrics(Boolean(checked))} />
-                            <label
-                                htmlFor="biometrics"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                            >
-                                <Fingerprint className="h-4 w-4" /> Register Biometrics on this device
-                            </label>
                         </div>
                         <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
                             {isLoading ? <LoaderCircle className="animate-spin mr-2" /> : 'Create account'}
@@ -284,7 +233,7 @@ export default function SignupPage() {
                         onClick={handleFinalSignup}
                         disabled={isLoading || isCaptchaLoading || !captchaChallenge || captchaInput.toLowerCase() !== captchaChallenge?.correctText.toLowerCase()}
                     >
-                        {isLoading ? <LoaderCircle className="animate-spin" /> : 'Create Account'}
+                        {isLoading ? <LoaderCircle className="animate-spin" /> : 'Proceed'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -292,3 +241,5 @@ export default function SignupPage() {
     </>
   )
 }
+
+    

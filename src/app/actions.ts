@@ -6,7 +6,7 @@ import type { SummarizeAnomalyScoresOutput } from "@/ai/flows/summarize-anomaly-
 import { verifyBiometrics } from "@/ai/flows/verify-biometrics-flow";
 import { sendEmailNotification } from "@/ai/flows/send-email-notification-flow";
 import type { SendEmailNotificationInput } from "@/ai/flows/send-email-notification-flow";
-import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential, storeTwoFactorCode, getTwoFactorCode } from "@/services/user-service";
+import { createUser, findUserByEmail, type UserCredentials, storeUserCredential, getUserCredential, storeTwoFactorCode, getTwoFactorCode, saveUserBaseline, getUserBaseline } from "@/services/user-service";
 import { readTransactions, writeTransactions } from "@/services/transaction-service";
 import { storeLoginLocation } from "@/services/location-service";
 import { randomBytes } from 'crypto';
@@ -347,56 +347,66 @@ export async function getCaptchaChallenge(): Promise<CaptchaOutput> {
 
 // === Behavioral Anomaly Detection Action ===
 
-// This is a placeholder for where real session management would be,
-// but since the session service is now client-side, we pass the baseline from the client.
-interface SimulatedSession {
-    baseline: {
-        avg_hold: number;
-        wpm: number;
-        backspaces: number;
-    };
+export async function storeBehavioralBaseline(
+    email: string,
+    baseline: Omit<BehaviorMetrics, 'keyHoldDurations' | 'mouseMovements'>
+): Promise<{success: boolean}> {
+    try {
+        await saveUserBaseline(email, baseline);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to store behavioral baseline:", error);
+        return { success: false };
+    }
 }
 
 export async function analyzeBehavioralMetrics(
     email: string, 
-    metrics: BehaviorMetrics, 
-    baseline: SimulatedSession['baseline']
-): Promise<{ status: 'ok' | 'anomaly' }> {
+    metrics: BehaviorMetrics
+): Promise<{ status: 'ok' | 'anomaly'; reason?: string }> {
+    const baseline = await getUserBaseline(email);
+    if (!baseline) {
+        // No baseline available, so we can't detect anomalies yet.
+        return { status: 'ok' };
+    }
+
     const { typingSpeedWPM, backspaceCount, avgKeyHoldDuration } = metrics;
-    let anomalyDetected = false;
+    let anomalyReason = "";
 
     // Compare with baseline if enough data has been collected
-    if (typingSpeedWPM > 0 && baseline.wpm > 0) {
-        const wpmDeviation = Math.abs(typingSpeedWPM - baseline.wpm) / baseline.wpm;
+    if (typingSpeedWPM > 0 && baseline.typingSpeedWPM > 0) {
+        const wpmDeviation = Math.abs(typingSpeedWPM - baseline.typingSpeedWPM) / baseline.typingSpeedWPM;
         if (wpmDeviation > 0.30) {
             console.log(`ANOMALY: WPM deviation of ${wpmDeviation.toFixed(2) * 100}% detected for ${email}.`);
-            anomalyDetected = true;
+            anomalyReason = `Unusual typing speed detected.`;
         }
     }
 
-    if (avgKeyHoldDuration > 0 && baseline.avg_hold > 0) {
-        const holdDeviation = Math.abs(avgKeyHoldDuration - baseline.avg_hold) / baseline.avg_hold;
-        if (holdDeviation > 0.25) {
+    if (avgKeyHoldDuration > 0 && baseline.avgKeyHoldDuration > 0) {
+        const holdDeviation = Math.abs(avgKeyHoldDuration - baseline.avgKeyHoldDuration) / baseline.avgKeyHoldDuration;
+        if (holdDeviation > 0.30) { // Using 30% threshold as requested
             console.log(`ANOMALY: Key hold duration deviation of ${holdDeviation.toFixed(2) * 100}% detected for ${email}.`);
-            anomalyDetected = true;
+            anomalyReason = anomalyReason || `Unusual key pressure detected.`;
         }
     }
     
-    if (backspaceCount > 5 && baseline.backspaces > 0) {
-        const backspaceDeviation = Math.abs(backspaceCount - baseline.backspaces) / (baseline.backspaces + 1); // Avoid division by zero
-        if (backspaceDeviation > 0.50) {
+    // Check backspace deviation relative to text length to avoid false positives on short text
+    const textLength = metrics.keyHoldDurations.length - metrics.backspaceCount; // A rough estimate
+    if (textLength > 20 && baseline.backspaceCount > 0) {
+        const backspaceDeviation = Math.abs(backspaceCount - baseline.backspaceCount) / baseline.backspaceCount;
+        if (backspaceDeviation > 0.30) { // Using 30% threshold
             console.log(`ANOMALY: Backspace count deviation of ${backspaceDeviation.toFixed(2) * 100}% detected for ${email}.`);
-            anomalyDetected = true;
+            anomalyReason = anomalyReason || `Unusual number of corrections made.`;
         }
     }
 
-    if (anomalyDetected) {
+    if (anomalyReason) {
         await sendNotificationEmail({
             to: email,
             subject: "Security Alert: Unusual Account Activity Detected",
-            body: "<h1>Security Alert</h1><p>Our systems detected unusual behavior on your account and your session was terminated as a precaution. If this was not you, please secure your account immediately.</p>"
+            body: `<h1>Security Alert</h1><p>Our systems detected unusual behavior on your account and your session was terminated as a precaution. Reason: ${anomalyReason}. If this was not you, please secure your account immediately.</p>`
         });
-        return { status: 'anomaly' };
+        return { status: 'anomaly', reason: anomalyReason };
     }
 
     return { status: 'ok' };
@@ -424,3 +434,5 @@ export async function trackLoginLocation(
     return { success: false };
   }
 }
+
+    
