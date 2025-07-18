@@ -163,11 +163,11 @@ export default function SignupPage() {
                     <form ref={formRef} onSubmit={handleInitiateSignup} className="grid gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="full-name">Full name</Label>
-                            <Input id="full-name" name="fullName" placeholder="Suresh Kumar" required />
+                            <Input id="full-name" name="fullName" placeholder="Enter your Name" required />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" name="phone" type="tel" placeholder="9876543210" required maxLength={10} />
+                            <Input id="phone" name="phone" type="tel" placeholder="Enter your phone number" required maxLength={10} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
