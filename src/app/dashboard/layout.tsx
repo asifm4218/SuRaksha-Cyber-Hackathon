@@ -122,20 +122,16 @@ export default function DashboardLayout({
 
   const handleIdle = () => {
     setIsIdleDialogOpen(true);
+    handleSessionTimeout(); // Log server-side event if any
+    // The actual redirect will be handled by the dialog's button
   };
 
-  const { reset: resetIdleTimer } = useIdle({ onIdle: handleIdle, idleTime: 60 });
+  useIdle({ onIdle: handleIdle, idleTime: 60 });
 
-  const handleLogout = () => {
-    handleSessionTimeout();
+  const handleReturnToSignIn = () => {
     setIsIdleDialogOpen(false);
     setIsBehaviorAlertDialogOpen(false);
     router.push('/signin');
-  }
-
-  const handleContinueSession = () => {
-    setIsIdleDialogOpen(false);
-    resetIdleTimer();
   }
 
   return (
@@ -291,22 +287,19 @@ export default function DashboardLayout({
 
     {/* Idle Session Timeout Dialog */}
     <Dialog open={isIdleDialogOpen} onOpenChange={setIsIdleDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
                 <div className="flex flex-col items-center text-center">
                     <Timer className="h-16 w-16 text-primary mb-4" />
-                    <DialogTitle className="text-2xl">Are you still there?</DialogTitle>
+                    <DialogTitle className="text-2xl">Session Timed Out</DialogTitle>
                 </div>
                 <DialogDescription className="text-center py-4">
-                    For your security, you will be logged out due to inactivity. Click "Continue Session" to stay logged in.
+                    For your security, you have been logged out due to inactivity.
                 </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
-                <Button onClick={handleLogout} variant="secondary" className="w-full sm:w-auto">
-                    Sign Out
-                </Button>
-                <Button onClick={handleContinueSession} className="w-full sm:w-auto">
-                    Continue Session
+            <DialogFooter>
+                <Button onClick={handleReturnToSignIn} className="w-full">
+                    Return to Sign In
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -314,7 +307,7 @@ export default function DashboardLayout({
 
     {/* Behavioral Anomaly Dialog */}
     <Dialog open={isBehaviorAlertDialogOpen} onOpenChange={setIsBehaviorAlertDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
                  <div className="flex flex-col items-center text-center">
                     <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
@@ -325,7 +318,7 @@ export default function DashboardLayout({
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-                <Button onClick={handleLogout} className="w-full">
+                <Button onClick={handleReturnToSignIn} className="w-full">
                     Return to Sign In
                 </Button>
             </DialogFooter>
