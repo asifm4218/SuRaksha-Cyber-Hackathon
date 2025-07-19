@@ -1,10 +1,10 @@
-# VeriSafe - AI-Powered Secure Banking App
+# SuRaksha Banking apllication - AI-Powered Secure Banking App
 
-VeriSafe is a modern, proof-of-concept secure banking application built with Next.js and Firebase. It demonstrates how continuous authentication can be achieved using behavioral biometrics and AI-powered analysis to enhance user security beyond traditional login methods.
+This is a modern, proof-of-concept secure banking application built with Next.js and Firebase. It demonstrates how continuous authentication can be achieved using behavioral biometrics and AI-powered analysis to enhance user security beyond traditional login methods.
 
 The application simulates a real banking environment where user interactions are non-intrusively monitored to detect anomalies, providing an extra layer of protection against unauthorized access.
 
-![VeriSafe Dashboard](https://firebasestudio.ai/docs/verisafe-dashboard.png)
+
 
 ## Core Features
 
@@ -36,7 +36,6 @@ The application simulates a real banking environment where user interactions are
 -   **Language**: [TypeScript](https://www.typescriptlang.org/)
 -   **UI Components**: [ShadCN UI](https://ui.shadcn.com/)
 -   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
--   **Generative AI**: [Firebase Genkit](https://firebase.google.com/docs/genkit)
 -   **Database**: Simulated using local JSON files (`users.json`, `transactions.json`, etc.) for rapid prototyping.
 -   **Deployment**: Configured for [Firebase App Hosting](https://firebase.google.com/docs/app-hosting).
 
